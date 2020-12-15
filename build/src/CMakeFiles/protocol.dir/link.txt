@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../output/debug/lib/libprotocol.a  CMakeFiles/protocol.dir/json_type.cc.o CMakeFiles/protocol.dir/wejson.cc.o
-/usr/bin/ranlib ../../output/debug/lib/libprotocol.a
