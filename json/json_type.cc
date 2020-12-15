@@ -1,6 +1,6 @@
 #include "json_type.h"
 
-namespace my_util {
+namespace my_utils {
 
 JsonIndex::JsonIndex(void)
  : index_type_(JSON_NUMBER_TYPE),

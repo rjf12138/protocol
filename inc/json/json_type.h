@@ -5,7 +5,7 @@
 #include "byte_buffer.h"
 #include "msg_record.h"
 
-namespace my_util {
+namespace my_utils {
 
 class ValueTypeCast;
 

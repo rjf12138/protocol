@@ -1,6 +1,6 @@
 #include "wejson.h"
 
-namespace my_util {
+namespace my_utils {
 WeJson::WeJson(void) = default;
 WeJson::WeJson(string str) 
 {
