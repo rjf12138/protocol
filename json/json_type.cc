@@ -1,4 +1,4 @@
-#include "json_type.h"
+#include "json/json_type.h"
 
 namespace my_utils {
 
@@ -1264,6 +1264,76 @@ ValueTypeCast& ValueTypeCast::operator[](JsonIndex key)
     }
 }
 
+int 
+ValueTypeCast::parse(ByteBuffer &buff)
+{
+    ByteBuffer simple_json_text;
+    ByteBuffer_Iterator start_pos;
+    
+    // 找json文本的开始，如果遇到不是'{'开始的会返回失败
+    for (start_pos = buff.begin(); start_pos != buff.end(); ++start_pos) {
+        VALUE_TYPE ret = JsonType::check_value_type(start_pos);
+        if (ret == JSON_OBJECT_TYPE || ret == JSON_ARRAY_TYPE) {
+            break;
+        }
+    }
+
+    if (start_pos == buff.end()) {
+        return -1;
+    }
+
+    bool quotation_marks = false;
+    for (auto iter = start_pos; iter != buff.end(); ++iter) {
+        if (quotation_marks == false && *iter == '"') {
+            quotation_marks = true;
+            simple_json_text.write_int8(*iter); // 写入字符串的第一个 "\""
+            continue;
+        }
+
+        if (quotation_marks == true) {
+            if (*iter == '\\'){ 
+                simple_json_text.write_int8(*iter);
+                ++iter; // '\' 为转义字符下一个字符不做解析
+                simple_json_text.write_int8(*iter);
+            } else if (*iter == '"') {
+                quotation_marks = false;
+            }
+        }
+
+        int i = 0;
+        for (i = 0; i < 4; ++i) {
+            if (sperate_chars[i] == *iter) {
+                break;
+            }
+        }
+        // 如果匹配到json的结构字符并且不是在字符串中，那么就忽略
+        if (i < 4 && quotation_marks == false) {
+            continue;
+        }
+
+        // "//" 以这个开头的注释也会被忽略，这个注释可以单独一行或是跟在json那行的末尾，不能出现在json文本那行的前面
+        if (quotation_marks == false && *iter == '/' && *(iter+1) == '/') {
+            for (; iter != buff.end(); ++iter) {
+                if (*iter == '\n') {
+                    break;
+                }
+            }
+
+            if (*iter == '\n') {
+                continue;
+            }
+        }
+
+        simple_json_text.write_int8(*iter);
+    }
+    auto begin_json = simple_json_text.begin();
+    auto end_json = simple_json_text.end();
+
+    this->parse(begin_json, end_json);
+
+    return 0;
+}
+
 ByteBuffer_Iterator 
 ValueTypeCast::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_end_pos)
 {
@@ -1285,7 +1355,6 @@ ValueTypeCast::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &
         return json_object_value_.parse(value_start_pos, json_end_pos);
     default:
         string err_str = get_msg("Unknown json type (object or array)");
-        throw runtime_error(err_str);
         break;
     }
 }

@@ -14,13 +14,11 @@ enum PaserResult {
 
 class ProtocolParser : public MsgRecord {
 public:
-    ProtocolParser(void);
-    ~ProtocolParser(void);
+    ProtocolParser(void) = default;
+    virtual ~ProtocolParser(void) = 0;
 
-    int parser(ByteBuffer &data);
-    int generate(void);
-private:
-    ByteBuffer data_buffer_;
+    virtual int parse(ByteBuffer &data) = 0;
+    virtual string generate(void) = 0;
 };
 
 };

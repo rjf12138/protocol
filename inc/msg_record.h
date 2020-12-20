@@ -6,12 +6,14 @@
 namespace my_utils {
 //////////////////////////////////////////////////////////////////////////////
 enum InfoLevel {
+    LOG_LEVEL_NONE, // 最低优先级
     LOG_LEVEL_TRACE,
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_INFO,
     LOG_LEVEL_WARN,
     LOG_LEVEL_ERROR,
-    LOG_LEVEL_FATAL
+    LOG_LEVEL_FATAL,
+    LOG_LEVEL_MAX // 最高优先级
 };
 
 struct MsgContent {

@@ -1,6 +1,7 @@
-#include "wejson.h"
+#include "json/wejson.h"
 
 namespace my_utils {
+
 WeJson::WeJson(void) = default;
 WeJson::WeJson(string str) 
 {
@@ -53,8 +54,10 @@ int
 WeJson::parser_from_json(string str)
 {
     ByteBuffer raw_json_buffer;
+
     raw_json_buffer.clear();
     raw_json_buffer.write_bytes(str.c_str(), str.length());
+    
     return this->parser_from_json(raw_json_buffer);
 }
 
@@ -104,17 +107,6 @@ WeJson::parser_from_json(ByteBuffer &buff)
     auto end_json = simple_json_text.end();
 
     this->parse(begin_json, end_json);
-    // VALUE_TYPE ret_type = this->check_value_type(begin_json);
-    // if (ret_type == JSON_ARRAY_TYPE) {
-    //     json_array_value_.parse(begin_json, end_json);
-    //     json_value_type_ = JSON_ARRAY_TYPE;
-    // } else if (ret_type == JSON_OBJECT_TYPE) {
-    //     json_object_value_.parse(begin_json, end_json);
-    //     json_value_type_ = JSON_OBJECT_TYPE;
-    // } else {
-    //     string err_str = get_msg("Unknown json type (object or array)");
-    //     throw runtime_error(err_str);
-    // }
 
     return 0;
 }

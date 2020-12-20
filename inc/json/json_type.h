@@ -2,10 +2,12 @@
 #define __JSON_TYPE_H__
 
 #include "basic_head.h"
-#include "byte_buffer.h"
-#include "msg_record.h"
+#include "protocol.h"
 
 namespace my_utils {
+
+// json中重要的分割字符
+const vector<char> sperate_chars = {' ', '\r', '\n','\t','{', '}','[', ']',',',':','"'};
 
 class ValueTypeCast;
 
@@ -89,23 +91,32 @@ private:
     ObjIter obj_iter_;
     ArrIter arr_iter_;
 };
+// ====================================================添加日志打印输出优先级
+/// =====================================================
 
-class JsonType : public MsgRecord {
+class JsonType : public ProtocolParser {
 public:
     // 检查当前位置的字符来判断接下来的是什么类型，具体参考doc中的资料
     static VALUE_TYPE check_value_type(ByteBuffer_Iterator &iter);
+    
+    // 根据输入的缓存，解析成json
+    int parse(ByteBuffer &data) {return 0;}
+
     // 解析遇到的类型，具体取决于check_value_type()返回的类型和继承该类的实现
     virtual ByteBuffer_Iterator parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_end_pos){return ByteBuffer_Iterator();}
+    
     // 将json值反序列化为字符串输出， 没有格式化
     virtual string generate(void) { return "";}
+    
     // 获取以value_curr_pos为中心，range为半径范围的json值，主要为了调试用
     string get_json_text(ByteBuffer_Iterator &value_curr_pos, int range);
+    
     // 输出调试信息
     virtual string debug_info(ByteBuffer_Iterator &value_curr_pos);
 };
 
 // json 数值类型
-class JsonNumber : public JsonType{
+class JsonNumber : public JsonType {
     friend ostream& operator<<(ostream &os, JsonNumber &rhs);
 public:
     JsonNumber(void);
@@ -277,9 +288,11 @@ public:
 
     bool operator==(const ValueTypeCast& rhs) const;
     bool operator!=(const ValueTypeCast& rhs) const;
-
+    // 访问json值
     ValueTypeCast& operator[](JsonIndex key);
 
+    // 解析输入json文本
+    int parse(ByteBuffer &data);
     // 解析json类型
     virtual ByteBuffer_Iterator parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_end_pos);
     // 非格式化输出 json
@@ -287,9 +300,9 @@ public:
     // 格式化输出 json
     virtual string format_json(void);
 
-    // 查找元素
+    // 查找元素（只能同级查找）
     JsonIter find(const string &key);
-    // 操作元素
+    // 移除元素元素
     int erase(JsonIndex key);
     // 当前类型为对象时添加元素
     int add(JsonIndex key, ValueTypeCast value);
