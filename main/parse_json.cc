@@ -1,7 +1,7 @@
-#include "wejson.h"
 #include "buffer/str_buffer.h"
+#include "json/wejson.h"
 
-using namespace my_util;
+using namespace my_utils;
 
 enum EnumOption {
     EOption_Quit,
@@ -37,7 +37,6 @@ int main(int argc, char *argv[])
 
     string input;
     while (true) {
-        // cout << ">H";
         getline(cin, input);
         if (input == "quit") {
             break;

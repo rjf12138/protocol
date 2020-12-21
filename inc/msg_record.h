@@ -6,7 +6,7 @@
 namespace my_utils {
 //////////////////////////////////////////////////////////////////////////////
 enum InfoLevel {
-    LOG_LEVEL_NONE, // 最低优先级
+    LOG_LEVEL_LOW, // 最低优先级
     LOG_LEVEL_TRACE,
     LOG_LEVEL_DEBUG,
     LOG_LEVEL_INFO,
@@ -54,9 +54,13 @@ public:
     MsgRecord(void);
     virtual ~MsgRecord(void);
 
+    void set_print_level(InfoLevel level);
+
     virtual void print_msg(InfoLevel level, int line, string file_name, string func, const char *format, ...);
     virtual string get_msg_attr(InfoLevel level, int line, string file_name, string func, const char *format, ...);
-    string level_convert(enum InfoLevel level);
+
+    void assemble_msg(ostringstream &ostr, const MsgContent &msg, bool is_color_enable = false);
+    string level_convert(InfoLevel level);
 
     void set_stream_func(InfoLevel level, msg_to_stream_callback func);
     msg_to_stream_callback get_stream_func(InfoLevel level);
@@ -65,6 +69,8 @@ public:
     static MsgRecord g_log_msg;
 
 private:
+    InfoLevel print_level_; // 设置输出等级， 低于该等级的将不会被输出 
+
     // 输出函数变量 
     msg_to_stream_callback msg_to_stream_trace_;
     msg_to_stream_callback msg_to_stream_debug_;
@@ -74,16 +80,19 @@ private:
     msg_to_stream_callback msg_to_stream_fatal_;
 };
 
-#define LOG_TRACE(...)  this->print_msg(LOG_LEVEL_TRACE, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
-#define LOG_DEBUG(...)  this->print_msg(LOG_LEVEL_DEBUG, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
-#define LOG_INFO(...)   this->print_msg(LOG_LEVEL_INFO, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
-#define LOG_WARN(...)   this->print_msg(LOG_LEVEL_WARN, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
-#define LOG_ERROR(...)  this->print_msg(LOG_LEVEL_ERROR, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
-#define LOG_FATAL(...)  this->print_msg(LOG_LEVEL_FATAL, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
+#define SET_PRINT_LEVEL(x)  this->set_print_level(x)
+#define LOG_TRACE(...)      this->print_msg(LOG_LEVEL_TRACE, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
+#define LOG_DEBUG(...)      this->print_msg(LOG_LEVEL_DEBUG, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
+#define LOG_INFO(...)       this->print_msg(LOG_LEVEL_INFO, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
+#define LOG_WARN(...)       this->print_msg(LOG_LEVEL_WARN, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
+#define LOG_ERROR(...)      this->print_msg(LOG_LEVEL_ERROR, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
+#define LOG_FATAL(...)      this->print_msg(LOG_LEVEL_FATAL, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
+#define SET_CALLBACK(LEVEL, FUNC) this->set_stream_func(LEVEL, FUNC)
 
 #define GET_MSG(...)  this->get_msg_attr(LOG_LEVEL_INFO, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
 
 
+#define SET_GLOBAL_PRINT_LEVEL(x) MsgRecord::g_log_msg.set_print_level(x)
 #define LOG_GLOBAL_TRACE(...)  MsgRecord::g_log_msg.print_msg(LOG_LEVEL_TRACE, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
 #define LOG_GLOBAL_DEBUG(...)  MsgRecord::g_log_msg.print_msg(LOG_LEVEL_DEBUG, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
 #define LOG_GLOBAL_INFO(...)   MsgRecord::g_log_msg.print_msg(LOG_LEVEL_INFO, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
