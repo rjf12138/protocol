@@ -92,8 +92,11 @@ private:
     ArrIter arr_iter_;
 };
 
-class JsonType : public ProtocolParser {
+class JsonType : public MsgRecord {
 public:
+    JsonType(void) {}
+    virtual ~JsonType(void) {}
+
     // 检查当前位置的字符来判断接下来的是什么类型，具体参考doc中的资料
     static VALUE_TYPE check_value_type(ByteBuffer_Iterator &iter);
     

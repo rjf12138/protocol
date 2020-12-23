@@ -7,20 +7,6 @@
 
 namespace my_utils {
 
-enum PaserResult {
-    ProtocolParser_Failed = -1,
-    ProtocolParse_OK = 1,
-};
-
-class ProtocolParser : public MsgRecord {
-public:
-    ProtocolParser(void) = default;
-    virtual ~ProtocolParser(void) = 0;
-
-    virtual int parse(ByteBuffer &data) = 0;
-    virtual string generate(void) = 0;
-};
-
 };
 
 #endif

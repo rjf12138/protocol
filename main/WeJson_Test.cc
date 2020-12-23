@@ -1,7 +1,7 @@
-#include "wejson.h"
+#include "json/wejson.h"
 #include "gtest/gtest.h"
 
-using namespace my_util;
+using namespace my_utils;
 
 namespace my {
 namespace project {
@@ -24,8 +24,7 @@ protected:
 
 bool test_number(double val, string str_val)
 {
-    std::cout << "test_number: " << val << std::endl;
-    fprintf(stdout, "double: %lf, str_double: %s\n", val, str_val.c_str());
+//    fprintf(stdout, "double: %lf, str_double: %s\n", val, str_val.c_str());
     JsonNumber json_number(val);
     ostringstream ostr;
     ostr << json_number;
@@ -85,6 +84,16 @@ TEST_F(WeJson_Test, NUMBER_TEST)
     ASSERT_EQ(test_parse_number(0.00001, "0.00001"), true);
     ASSERT_EQ(test_parse_number(0.00001, "+0.00001"), true);
     ASSERT_EQ(test_parse_number(-0.00001, "-0.00001"), true);
+
+    ASSERT_EQ(test_number(-0., "0"), true);
+    ASSERT_EQ(test_number(+0000., "0"), true);
+    ASSERT_EQ(test_number(+0000.00000000, "0"), true);
+
+    // double 小数点后默认保留6位，
+    ASSERT_EQ(test_number(-0.123456789, "-0.123457"), true);
+    ASSERT_EQ(test_number(+000.123456778, "+0.123457"), true);
+    ASSERT_EQ(test_number(+0000.1234567890000, "+0.123457"), true);
+
     try {
         ASSERT_EQ(test_parse_number(0, "03"), true);
     }catch (exception &e) {

@@ -410,7 +410,24 @@ JsonNumber::generate(void)
     {
     case DOUBLE_TYPE:
     {
-        os << double_value_;
+        char buf[256] = {0};
+        snprintf(buf, 256, "%lf", double_value_);
+
+        int j = 255;
+        for (; j >=0; --j) {
+            if (buf[j] == '.') {
+                break;
+            }
+        }
+
+        for (int i = 255; j >= 0 && i >= j; --i) {
+            if (buf[i] <= '9' && buf[i] > '0') {
+                break;
+            }
+            buf[i] = '\0';
+        }
+
+        return buf;
     } break;
     case INT32_TYPE:
     {
@@ -1272,6 +1289,8 @@ ValueTypeCast::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &
         string err_str = GET_MSG("Unknown json type (object or array)");
         break;
     }
+
+    return json_end_pos;
 }
 
 string ValueTypeCast::generate(void)
