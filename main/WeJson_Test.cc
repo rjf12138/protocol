@@ -89,11 +89,12 @@ TEST_F(WeJson_Test, NUMBER_TEST)
     ASSERT_EQ(test_number(+0000., "0"), true);
     ASSERT_EQ(test_number(+0000.00000000, "0"), true);
 
-    // double 小数点后默认保留6位，
+    // double 小数点后默认保留6位，最后一位会以第七位进一
     ASSERT_EQ(test_number(-0.123456789, "-0.123457"), true);
     ASSERT_EQ(test_number(+000.123456778, "+0.123457"), true);
     ASSERT_EQ(test_number(+0000.1234567890000, "+0.123457"), true);
 
+    ASSERT_EQ(test_number(-0.123456789, "-0.123457"), true);
     try {
         ASSERT_EQ(test_parse_number(0, "03"), true);
     }catch (exception &e) {
