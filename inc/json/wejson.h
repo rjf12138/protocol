@@ -108,12 +108,6 @@ public:
     
     // 将json值反序列化为字符串输出， 没有格式化
     virtual string generate(void) { return "";}
-    
-    // 获取以value_curr_pos为中心，range为半径范围的json值，主要为了调试用
-    string get_json_text(ByteBuffer_Iterator &value_curr_pos, int range);
-    
-    // 输出调试信息
-    virtual string debug_info(ByteBuffer_Iterator &value_curr_pos);
 };
 
 // json 数值类型

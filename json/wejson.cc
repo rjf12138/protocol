@@ -297,33 +297,6 @@ JsonType::check_value_type(ByteBuffer_Iterator &iter)
     return UNKNOWN_TYPE;
 }
 
-string 
-JsonType::get_json_text(ByteBuffer_Iterator &value_curr_pos, int range)
-{
-    ostringstream ostr;
-    ostr << "json text arround error: " << endl;
-    auto lower_limit = value_curr_pos - range > value_curr_pos.begin() ? value_curr_pos - range : value_curr_pos.begin();
-    auto upper_limit = value_curr_pos + range >= value_curr_pos.end() ? value_curr_pos.end()-1 : value_curr_pos + range;
-
-    auto pos = lower_limit;
-    for (; pos <= upper_limit; ++pos) {
-        ostr << *pos;
-    }
-
-    if (value_curr_pos != value_curr_pos.end()) {
-        ostr << endl << " Error occur pos: " << *value_curr_pos;
-    } else {
-        ostr << endl << " Error occur pos: At End";
-    }
-    return ostr.str();
-}
-
-string
-JsonType::debug_info(ByteBuffer_Iterator &value_curr_pos)
-{
-    return this->get_json_text(value_curr_pos, 30); //先定60个字符的范围 
-}
-
 ///////////////////////////////////////////////////////////
 
 JsonNumber::JsonNumber(void)
@@ -375,7 +348,7 @@ JsonNumber::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
 
     if (iter != json_end_pos && *iter == '0') {
         if (isdigit(*(iter+1))) { // 除了小数和数值0之外，零不能作为第一个数
-            string err_str = GET_MSG("Zero can't be first number of integer!\n%s", this->debug_info(iter).c_str());
+            string err_str = GET_MSG("Zero can't be first number of integer!");
             throw runtime_error(err_str);
         }
     }
@@ -526,7 +499,7 @@ JsonBool::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_
     } else if (str == "false") {
         value_ = false;
     } else {
-        throw runtime_error(GET_MSG("Expected true or false, but result is %s\n%s", str.c_str(), this->debug_info(iter).c_str()));
+        throw runtime_error(GET_MSG("Expected true or false, but result is %s", str.c_str()));
     }
 
     return iter;
@@ -593,7 +566,7 @@ JsonNull::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_
     if (str == "null") {
         value_ = str;
     } else {
-        throw runtime_error(GET_MSG("Expected null, but result is %s\n%s", str.c_str(), this->debug_info(iter).c_str()));
+        throw runtime_error(GET_MSG("Expected null, but result is %s", str.c_str()));
     }
 
 
@@ -661,7 +634,7 @@ JsonString::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
 
     if (iter == json_end_pos)
     {
-        throw runtime_error(GET_MSG("String need to surround by \"\" \n%s", this->debug_info(iter).c_str()));
+        throw runtime_error(GET_MSG("String need to surround by \"\""));
     }
     value_ = str;
     ++iter; //  iter 指向下一个字符
@@ -720,7 +693,7 @@ JsonObject::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
         VALUE_TYPE ret_value_type = this->check_value_type(iter);
         if (ret_value_type == UNKNOWN_TYPE) {
             if (*iter != ',' && *iter != ':' && *iter != ']') {
-                throw runtime_error( GET_MSG("Unknown character in object: %c\n%s", *iter, this->debug_info(iter).c_str()));
+                throw runtime_error( GET_MSG("Unknown character in object: %c", *iter));
             }
             continue;
         }
@@ -779,7 +752,7 @@ JsonObject::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
         if (object_val_.find(value_name) == object_val_.end()) {
             object_val_[value_name] = vtc;
         } else {
-            throw runtime_error(GET_MSG("There's already \"%s\" exists.\n%s", this->debug_info(iter).c_str()));
+            throw runtime_error(GET_MSG("There's already \"%s\" exists."));
         }
         flag = false;
         if (*iter == '}') { // 有些解析完就直接指向'}'， 如果不退出在回到循环会因值自增错过
@@ -916,7 +889,7 @@ JsonArray::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json
         VALUE_TYPE ret_value_type = this->check_value_type(iter);
         if (ret_value_type == UNKNOWN_TYPE) {
             if (*iter != ',') {
-                throw runtime_error(GET_MSG("Unknown character in array: %c\n%s", *iter, this->debug_info(iter).c_str()));
+                throw runtime_error(GET_MSG("Unknown character in array: %c", *iter));
             }
             continue;
         }
@@ -969,7 +942,7 @@ JsonArray::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json
         }
     }
     if (iter == json_end_pos) {
-        throw runtime_error(GET_MSG("Array need to surround by []\n%s", this->debug_info(iter).c_str()));
+        throw runtime_error(GET_MSG("Array need to surround by []"));
     }
     ++iter;
     return iter;
