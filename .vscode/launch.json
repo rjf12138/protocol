@@ -9,7 +9,7 @@
             "name": "gdb_debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/ruanjian/workspace/project_pre/protocol/output/debug/bin/WeJson_Test",
+            "program": "/home/ruanjian/workspace/project_pre/protocol/output/debug/bin/json_test",
             "args": [],
             "stopAtEntry": false,
             "cwd": "/home/ruanjian/workspace/project_pre/protocol",

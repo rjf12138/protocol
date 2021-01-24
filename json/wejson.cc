@@ -300,31 +300,19 @@ JsonType::check_value_type(ByteBuffer_Iterator &iter)
 ///////////////////////////////////////////////////////////
 
 JsonNumber::JsonNumber(void)
-: value_type_(NONE_TYPE),
-  double_value_(0),
-  int_value_(0)
+: value_(0)
   
 {
 
 }
-JsonNumber::JsonNumber(double val)
-: value_type_(DOUBLE_TYPE), 
-  double_value_(val),
-  int_value_(0)
-{
-}
-JsonNumber::JsonNumber(int32_t val)
-: value_type_(INT32_TYPE), 
-  double_value_(0),
-  int_value_(val)
-{
 
+JsonNumber::JsonNumber(double val)
+: value_(val)
+{
 }
 
 JsonNumber::JsonNumber(const JsonNumber& val)
-: value_type_(val.value_type_), 
-  double_value_(val.double_value_),
-  int_value_(val.int_value_)
+: value_(val.value_)
 {
 
 }
@@ -353,24 +341,15 @@ JsonNumber::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
         }
     }
 
-    bool is_decimal = false;
     for (; iter != json_end_pos && *iter != ','; ++iter) {
         if (!isdigit(*iter) && *iter != '.') {
             break;
         }
 
-        if (*iter == '.') {
-            is_decimal = true;
-        }
         str += *iter;
     }
-    if (is_decimal) {
-        value_type_ = DOUBLE_TYPE;
-        double_value_ = stod(str) * (is_negative?-1:1);
-    } else {
-        value_type_ = INT32_TYPE;
-        int_value_ = stoi(str) * (is_negative?-1:1);
-    }
+
+    value_ = stod(str) * (is_negative?-1:1);
 
     return iter;
 }
@@ -378,39 +357,24 @@ JsonNumber::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
 string 
 JsonNumber::generate(void) 
 {
-    ostringstream os;
-    switch (value_type_)
-    {
-    case DOUBLE_TYPE:
-    {
-        char buf[256] = {0};
-        snprintf(buf, 256, "%lf", double_value_);
+    char buf[256] = {0};
+    snprintf(buf, 256, "%lf", value_);
 
-        int j = 255;
-        for (; j >=0; --j) {
-            if (buf[j] == '.') {
-                break;
-            }
+    int j = 255;
+    for (; j >=0; --j) {
+        if (buf[j] == '.') {
+            break;
         }
-
-        for (int i = 255; j >= 0 && i >= j; --i) {
-            if (buf[i] <= '9' && buf[i] > '0') {
-                break;
-            }
-            buf[i] = '\0';
-        }
-
-        return buf;
-    } break;
-    case INT32_TYPE:
-    {
-        os << int_value_;
-    } break;
-    default:
-        break;
     }
 
-    return os.str();
+    for (int i = 255; j >= 0 && i >= j; --i) {
+        if (buf[i] <= '9' && buf[i] > '0') {
+            break;
+        }
+        buf[i] = '\0';
+    }
+
+    return buf;
 }
 
 ostream& 
@@ -424,22 +388,9 @@ operator<<(ostream &os, JsonNumber &rhs)
 bool
 JsonNumber::operator==(const JsonNumber& rhs) const
 {
-    if (value_type_ == rhs.value_type_) {
-        if (value_type_ == INT32_TYPE) {
-            return int_value_ == rhs.int_value_?true:false;
-        } else if (value_type_ == DOUBLE_TYPE) {
-            return double_value_ == rhs.double_value_?true:false;
-        }
-    } else {
-        if (value_type_ == INT32_TYPE) {
-            double tmp = int_value_;
-            return (tmp == rhs.double_value_? true: false); 
-        }
-        else {
-            double tmp = rhs.int_value_;
-            return (tmp == double_value_? true: false); 
-        }
-    }
+   if (value_ == rhs.value_) {
+       return true;
+   }
 
     return false;
 }
@@ -452,13 +403,7 @@ JsonNumber::operator!=(const JsonNumber& rhs) const
 JsonNumber& 
 JsonNumber::operator=(JsonNumber rhs)
 {
-    value_type_ = rhs.value_type_;
-    if (value_type_ == INT32_TYPE) {
-        int_value_ = rhs.int_value_;
-    } else if (value_type_ == DOUBLE_TYPE) {
-        double_value_ = rhs.double_value_;
-    }
-
+    value_ = rhs.value_;
     return *this;
 }
 

@@ -54,18 +54,26 @@ public:
     MsgRecord(void);
     virtual ~MsgRecord(void);
 
+    // 设置打印的等级，超过设定level的才会被输出
     void set_print_level(InfoLevel level);
 
+    // 将消息通过设定的回调函数输出
     virtual void print_msg(InfoLevel level, int line, string file_name, string func, const char *format, ...);
-    virtual string get_msg_attr(InfoLevel level, int line, string file_name, string func, const char *format, ...);
+    // 将消息以字符串方式返回
+    virtual string get_msg(InfoLevel level, int line, string file_name, string func, const char *format, ...);
 
+    // 组装消息
     void assemble_msg(ostringstream &ostr, const MsgContent &msg, bool is_color_enable = false);
+    // 消息等级转为字符串
     string level_convert(InfoLevel level);
 
+    // 设置消息回调函数
     void set_stream_func(InfoLevel level, msg_to_stream_callback func);
+    // 获取消息回调函数
     msg_to_stream_callback get_stream_func(InfoLevel level);
 
 public:
+    // 用于非类里面的全局输出
     static MsgRecord g_log_msg;
 
 private:
@@ -89,7 +97,7 @@ private:
 #define LOG_FATAL(...)      this->print_msg(LOG_LEVEL_FATAL, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
 #define SET_CALLBACK(LEVEL, FUNC) this->set_stream_func(LEVEL, FUNC)
 
-#define GET_MSG(...)  this->get_msg_attr(LOG_LEVEL_INFO, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
+#define GET_MSG(...)  this->get_msg(LOG_LEVEL_INFO, __LINE__, __FILE__, __FUNCTION__, __VA_ARGS__)
 
 
 #define SET_GLOBAL_PRINT_LEVEL(x) MsgRecord::g_log_msg.set_print_level(x)

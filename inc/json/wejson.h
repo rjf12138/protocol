@@ -116,7 +116,6 @@ class JsonNumber : public JsonType {
 public:
     JsonNumber(void);
     JsonNumber(double val);
-    JsonNumber(int32_t val);
     JsonNumber(const JsonNumber& val);
     ~JsonNumber(void);
 
@@ -128,9 +127,7 @@ public:
     JsonNumber& operator=(JsonNumber rhs);
 
 private:
-    NUMBER_TYPE_  value_type_;
-    double        double_value_;
-    int32_t       int_value_;
+    double        value_;
 };
 
 // json 布尔类型
