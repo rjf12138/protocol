@@ -566,18 +566,21 @@ JsonString::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
     ByteBuffer_Iterator iter = value_start_pos;
     ++iter; // 此时 *iter 值为 ",指向字符串的第一个字符
     string str;
+    str.clear();
     for (; iter != json_end_pos; ++iter) {
         if (*iter == '\\') { 
-            str += *iter;
+            char ch = *iter;
+            str += ch;
             ++iter; // '\' 为转义字符下一个字符不做解析
             str += *iter;
+            continue;
         } else if (*iter == '"') {
             break;
         }   
         str += *iter;
     }
 
-    if (iter == json_end_pos)
+    if (iter == json_end_pos) // 因为字符解析是以'"'为结尾的，所以当遇到Buffer结尾时说明字符不是以'"'结尾的
     {
         throw runtime_error(GET_MSG("String need to surround by \"\""));
     }

@@ -3,6 +3,46 @@
 
 using namespace my_utils;
 
+//////////////////////////////////////////////////
+char* g_str = NULL;
+void release_random_str(void)
+{
+    if (g_str != NULL) {
+        delete[] g_str;
+        g_str = NULL;
+    }
+}
+
+char* random_str(int setlen, int& outlen)
+{
+    release_random_str();
+
+    int length = rand() % setlen;
+    g_str = new char[length];
+
+    for (int i = 0; i < length - 1; ++i) {
+        char ch = rand() % 256;
+        g_str[i] = ch;
+        if (g_str[i] == 0) {
+            g_str[i] += 1;
+        }
+        if (g_str[i] == '"') {
+            if (i < length - 1) {
+                g_str[i++] = '\\';
+                g_str[i] = '"';
+            }
+            else {
+                g_str[i] = '0';
+            }
+        }
+    }
+    outlen = length;
+
+    return g_str;
+}
+
+//////////////////////////////////////////////////
+
 namespace my {
 namespace project {
 namespace {
@@ -104,9 +144,41 @@ TEST_F(WeJson_Test, NUMBER_TEST)
     }
 }
 
-TEST_F(WeJson_Test, TYPE_TEST)
+TEST_F(WeJson_Test, STRING_TEST)
 {
-    
+    int len;
+    for (int i = 0;i < 9000; ++i) {
+        char *ptr = random_str(16, len);
+        string str = ptr;
+        // 测试 string 和 const char* 构造函数是否一致
+        JsonString js_str_1(str);
+        JsonString js_str_2(ptr);
+        ASSERT_EQ(js_str_1.generate(), js_str_2.generate());
+
+        // 测试字符串解析， json解析的是双引号内的字符串，所以要将原来的
+        // 字符串加上双引号
+        ByteBuffer buff;
+        JsonString js_str_3;
+
+        str = '"';
+        str +=  ptr;
+        str += '"';
+        LOG_GLOBAL_DEBUG("Len: %d", len);
+        buff.write_string(str);
+        ByteBuffer_Iterator bbegin = buff.begin();
+        ByteBuffer_Iterator bend = buff.end();
+        if (len == 13 && i == 997) {
+            std::cout << i << std::endl;
+        }
+        js_str_3.parse(bbegin, bend);
+
+        if (js_str_1.generate() != js_str_3.generate()) {
+            std::cout << "" << std::endl;
+        }
+        ASSERT_EQ(js_str_1.generate(), js_str_3.generate());
+    }
+
+
 }
 
 }
