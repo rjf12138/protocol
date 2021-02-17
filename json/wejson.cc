@@ -301,21 +301,15 @@ JsonType::check_value_type(ByteBuffer_Iterator &iter)
 
 JsonNumber::JsonNumber(void)
 : value_(0)
-  
 {
 
 }
 
-JsonNumber::JsonNumber(double val)
+JsonNumber::JsonNumber(const double &val)
 : value_(val)
 {
 }
 
-JsonNumber::JsonNumber(const JsonNumber& val)
-: value_(val.value_)
-{
-
-}
 
 JsonNumber::~JsonNumber(void) {}
 
@@ -375,6 +369,11 @@ JsonNumber::generate(void)
     }
 
     return buf;
+}
+
+JsonNumber::operator double()
+{
+    return value_;
 }
 
 ostream& 
@@ -454,6 +453,11 @@ string
 JsonBool::generate(void)
 {
     return value_ == true? "true":"false";
+}
+
+JsonBool::operator bool()
+{
+    return value_;
 }
 
 ostream& operator<<(ostream &os, JsonBool &rhs)
@@ -569,8 +573,7 @@ JsonString::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
     str.clear();
     for (; iter != json_end_pos; ++iter) {
         if (*iter == '\\') { 
-            char ch = *iter;
-            str += ch;
+            str += *iter;
             ++iter; // '\' 为转义字符下一个字符不做解析
             str += *iter;
             continue;
@@ -579,7 +582,7 @@ JsonString::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
         }   
         str += *iter;
     }
-
+    
     if (iter == json_end_pos) // 因为字符解析是以'"'为结尾的，所以当遇到Buffer结尾时说明字符不是以'"'结尾的
     {
         throw runtime_error(GET_MSG("String need to surround by \"\""));
@@ -591,6 +594,11 @@ JsonString::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
 
 string 
 JsonString::generate(void)
+{
+    return value_;
+}
+
+JsonString::operator std::string()
 {
     return value_;
 }
@@ -805,11 +813,6 @@ JsonObject::operator!=(const JsonObject& rhs) const
 ValueTypeCast& 
 JsonObject::operator[](const string &key)
 {
-    auto iter = object_val_.find(key);
-    if (iter == object_val_.end()) {
-        string err_str = GET_MSG("Can't find value in JsonObject with key(%s)", key.c_str());
-        throw runtime_error(err_str);
-    }
     return object_val_[key];
 }
 
@@ -950,7 +953,8 @@ ValueTypeCast&
 JsonArray::operator[](size_t key)
 {
     if (key < 0 || key >= array_val_.size()) {
-        throw runtime_error(GET_MSG("There is out of range in JsonArray with key(%s)", key));
+        array_val_.insert(end(array_val_), ValueTypeCast());
+        return array_val_[array_val_.size() - 1];
     }
 
     return array_val_[key];
@@ -991,23 +995,35 @@ JsonArray::operator=(JsonArray rhs)
 
 ValueTypeCast::ValueTypeCast(void) {}
 
-ValueTypeCast::ValueTypeCast(JsonBool value)
+ValueTypeCast::ValueTypeCast(const JsonBool &value)
     : json_value_type_(JSON_BOOL_TYPE), json_bool_value_(value) {}
     
-ValueTypeCast::ValueTypeCast(JsonNumber value)
+ValueTypeCast::ValueTypeCast(const JsonNumber &value)
     : json_value_type_(JSON_NUMBER_TYPE), json_number_value_(value) {}
 
-ValueTypeCast::ValueTypeCast(JsonString value)
+ValueTypeCast::ValueTypeCast(const JsonString &value)
     : json_value_type_(JSON_STRING_TYPE), json_string_value_(value) {}
 
-ValueTypeCast::ValueTypeCast(JsonObject value)
+ValueTypeCast::ValueTypeCast(const JsonObject &value)
     : json_value_type_(JSON_OBJECT_TYPE), json_object_value_(value) {}
 
-ValueTypeCast::ValueTypeCast(JsonArray value)
+ValueTypeCast::ValueTypeCast(const JsonArray &value)
     : json_value_type_(JSON_ARRAY_TYPE), json_array_value_(value) {}
 
-ValueTypeCast::ValueTypeCast(JsonNull value)
+ValueTypeCast::ValueTypeCast(const JsonNull &value)
     : json_value_type_(JSON_NULL_TYPE), json_null_value_(value) {}
+
+ValueTypeCast::ValueTypeCast(const bool &value)
+    :json_value_type_(JSON_BOOL_TYPE), json_bool_value_(value) {}
+
+ValueTypeCast::ValueTypeCast(const double &value)
+    :json_value_type_(JSON_NUMBER_TYPE), json_number_value_(value) {}
+
+ValueTypeCast::ValueTypeCast(const string &value)
+    :json_value_type_(JSON_STRING_TYPE), json_string_value_(value) {}
+
+ValueTypeCast::ValueTypeCast(const char *value)
+    :json_value_type_(JSON_STRING_TYPE), json_string_value_(value) {}
 
 ValueTypeCast::ValueTypeCast(const ValueTypeCast &value)
     : json_value_type_(value.json_value_type_),
@@ -1072,6 +1088,33 @@ ValueTypeCast::operator JsonNull()
         throw runtime_error(GET_MSG("value cast failed: current type is not null"));
     }
 }
+
+// ValueTypeCast::operator double()
+// {
+//     if (json_value_type_ == JSON_NUMBER_TYPE) {
+//         return json_number_value_.value();
+//     } else {
+//         throw runtime_error(GET_MSG("value cast faled: current type is not number"));
+//     }
+// }
+
+// ValueTypeCast::operator string()
+// {
+//     if (json_value_type_ == JSON_STRING_TYPE) {
+//         return json_string_value_.value();
+//     } else {
+//         throw runtime_error(GET_MSG("value cast faled: current type is not string"));
+//     }
+// }
+
+// ValueTypeCast::operator bool()
+// {
+//     if (json_value_type_ == JSON_BOOL_TYPE) {
+//         return json_bool_value_.value();
+//     } else {
+//         throw runtime_error(GET_MSG("value cast faled: current type is not bool"));
+//     }
+// }
 
 ValueTypeCast& 
 ValueTypeCast::operator=(JsonBool val)
@@ -1169,12 +1212,14 @@ bool ValueTypeCast::operator==(const ValueTypeCast& rhs) const
 
     return true;
 }
-bool ValueTypeCast::operator!=(const ValueTypeCast& rhs) const
+bool 
+ValueTypeCast::operator!=(const ValueTypeCast& rhs) const
 {
     return !(*this == rhs);
 }
 
-ValueTypeCast& ValueTypeCast::operator[](JsonIndex key)
+ValueTypeCast& 
+ValueTypeCast::operator[](JsonIndex key)
 {
     if (json_value_type_ == JSON_OBJECT_TYPE && 
             key.get_type() == JSON_STRING_TYPE) {
@@ -1319,43 +1364,7 @@ int ValueTypeCast::add(JsonIndex key, ValueTypeCast value)
     return -1;
 }
 
-int ValueTypeCast::add(JsonIndex key, JsonString value)
-{
-    JsonString val(value);
-    if (json_value_type_ == JSON_OBJECT_TYPE) {
-        return json_object_value_.add(key, val);
-    } else if (json_value_type_ == JSON_ARRAY_TYPE) {
-        return json_array_value_.add(val);
-    }
 
-    throw runtime_error(GET_MSG("Not support add function!"));
-    return -1;
-}
-
-int ValueTypeCast::add(JsonIndex key, JsonBool value)
-{
-    JsonBool val(value);
-    if (json_value_type_ == JSON_OBJECT_TYPE) {
-        return json_object_value_.add(key, val);
-    } else if (json_value_type_ == JSON_ARRAY_TYPE) {
-        return json_array_value_.add(val);
-    }
-
-    throw runtime_error(GET_MSG("Not support add function!"));
-    return -1;
-}
-
-int ValueTypeCast::add(JsonIndex key, JsonNumber value)
-{
-    if (json_value_type_ == JSON_OBJECT_TYPE) {
-        return json_object_value_.add(key, value);
-    } else if (json_value_type_ == JSON_ARRAY_TYPE) {
-        return json_array_value_.add(value);
-    }
-
-    throw runtime_error(GET_MSG("Not support add function!"));
-    return -1;
-}
 
 
 JsonIter 

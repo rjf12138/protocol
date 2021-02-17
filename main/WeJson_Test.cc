@@ -2,43 +2,84 @@
 #include "gtest/gtest.h"
 
 using namespace my_utils;
-
 //////////////////////////////////////////////////
-char* g_str = NULL;
-void release_random_str(void)
+void random_str(int setlen, ByteBuffer &buff1, ByteBuffer &buff2)
 {
-    if (g_str != NULL) {
-        delete[] g_str;
-        g_str = NULL;
-    }
-}
+    buff1.clear();
+    buff2.clear();
 
-char* random_str(int setlen, int& outlen)
-{
-    release_random_str();
-
-    int length = rand() % setlen;
-    g_str = new char[length];
+    int length = rand() % setlen +1;
+    buff1.write_int8('"');
 
     for (int i = 0; i < length - 1; ++i) {
-        char ch = rand() % 256;
-        g_str[i] = ch;
-        if (g_str[i] == 0) {
-            g_str[i] += 1;
-        }
-        if (g_str[i] == '"') {
-            if (i < length - 1) {
-                g_str[i++] = '\\';
-                g_str[i] = '"';
-            }
-            else {
-                g_str[i] = '0';
-            }
+        int8_t ch = rand() % 256;
+        
+        if (ch == 0) {
+            buff1.write_int8('0');
+            buff2.write_int8('0');
+        } else if (ch == '"') {
+            buff1.write_int8('\\');
+            buff2.write_int8('\\');
+            buff1.write_int8('"');
+            buff2.write_int8('"');
+        } else if (ch == '\\') {
+            buff1.write_int8('\\');
+            buff2.write_int8('\\');
+            buff1.write_int8('\\');
+            buff2.write_int8('\\');
+        } else {
+            buff1.write_int8(ch);
+            buff2.write_int8(ch);
         }
     }
-    outlen = length;
+    buff1.write_int8('"');
 
-    return g_str;
+    return ;
+}
+
+bool str_compare(ByteBuffer &buff1, ByteBuffer &buff2)
+{
+    string str;
+    buff2.read_string(str);
+    JsonString js_str_t1(str);
+    bool ret = (str.length() == js_str_t1.generate().length());
+    if (ret == true) {
+        ret = (str == js_str_t1.generate());
+    }
+
+    if (ret == false) {
+        LOG_GLOBAL_DEBUG("Test_Str1: %s", str.c_str());
+        return false;
+    }
+
+    JsonString js_str_t2(str.c_str());
+    ret = (str.length() == js_str_t2.generate().length());
+    if (ret == true) {
+        ret = (str == js_str_t2.generate());
+    }
+    
+    if (ret == false) {
+        LOG_GLOBAL_DEBUG("Test_Str2: %s", str.c_str());
+        return false;
+    }
+
+    JsonString js_str_t3;
+    
+    ByteBuffer_Iterator bbegin = buff1.begin();
+    ByteBuffer_Iterator bend = buff1.end();
+
+    js_str_t3.parse(bbegin, bend);
+    ret = (str.length() == js_str_t3.generate().length());
+    if (ret == true) {
+        ret = (str == js_str_t3.generate());
+    }
+    
+    if (ret == false) {
+        LOG_GLOBAL_DEBUG("Test_Str3: %s", str.c_str());
+        return false;
+    }
+
+    return ret;
 }
 
 //////////////////////////////////////////////////
@@ -138,7 +179,7 @@ TEST_F(WeJson_Test, NUMBER_TEST)
     try {
         ASSERT_EQ(test_parse_number(0, "03"), true);
     }catch (exception &e) {
-        std::cout << "=======================================" << std::endl;
+        std::cout << "===============异常测试=================" << std::endl;
         std::cout << e.what() << std::endl;
         std::cout << "=======================================" << std::endl;
     }
@@ -146,39 +187,91 @@ TEST_F(WeJson_Test, NUMBER_TEST)
 
 TEST_F(WeJson_Test, STRING_TEST)
 {
-    int len;
-    for (int i = 0;i < 9000; ++i) {
-        char *ptr = random_str(16, len);
-        string str = ptr;
-        // 测试 string 和 const char* 构造函数是否一致
-        JsonString js_str_1(str);
-        JsonString js_str_2(ptr);
-        ASSERT_EQ(js_str_1.generate(), js_str_2.generate());
+    ByteBuffer buff1, buff2;
+    for (int i = 0;i < 190; ++i) {
+        random_str(11560, buff1, buff2);
+        ASSERT_EQ(str_compare(buff1, buff2), true);
+    }
+}
 
-        // 测试字符串解析， json解析的是双引号内的字符串，所以要将原来的
-        // 字符串加上双引号
-        ByteBuffer buff;
-        JsonString js_str_3;
+TEST_F(WeJson_Test, BooleanTest)
+{
+    ByteBuffer buff1;
+    JsonBool jb1(true), jb2(false);
 
-        str = '"';
-        str +=  ptr;
-        str += '"';
-        LOG_GLOBAL_DEBUG("Len: %d", len);
-        buff.write_string(str);
-        ByteBuffer_Iterator bbegin = buff.begin();
-        ByteBuffer_Iterator bend = buff.end();
-        if (len == 13 && i == 997) {
-            std::cout << i << std::endl;
-        }
-        js_str_3.parse(bbegin, bend);
+    ASSERT_EQ(jb1.generate(), "true");
+    ASSERT_EQ(jb2.generate(), "false");
 
-        if (js_str_1.generate() != js_str_3.generate()) {
-            std::cout << "" << std::endl;
-        }
-        ASSERT_EQ(js_str_1.generate(), js_str_3.generate());
+    buff1.write_string("true");
+    auto bbegin = buff1.begin();
+    auto bend = buff1.end();
+
+    jb1.parse(bbegin, bend);
+    ASSERT_EQ(jb1.generate(), "true");
+
+    buff1.clear();
+    buff1.write_string("false");
+    bbegin = buff1.begin();
+    bend = buff1.end();
+
+    jb1.parse(bbegin, bend);
+    ASSERT_EQ(jb1.generate(), "false");
+}
+
+TEST_F(WeJson_Test, NullTest)
+{
+    ByteBuffer buff1;
+    JsonNull jn1;
+
+    buff1.write_string("null");
+    auto bbegin = buff1.begin();
+    auto bend = buff1.end();
+
+    jn1.parse(bbegin, bend);
+    ASSERT_EQ(jn1.generate(), "null");
+}
+
+TEST_F(WeJson_Test, ObjectTest)
+{
+    try {
+        WeJson js("");
+    } catch (exception &e) {
+        std::cout << "===============异常测试=================" << std::endl;
+        std::cout << e.what() << std::endl;
+        std::cout << "=======================================" << std::endl;
     }
 
+    WeJson js("{}"), obj("{\"name\":\"Hello, World!\", \"tnull\": null, \"num\": 12.34, \"bool\": true}"), arr("[true, \"Hello\", null, 12.45]");
+    ASSERT_EQ((js.begin() == js.end()), true);
 
+    js["test-key"] = "test,value";
+    ASSERT_EQ(js["test-key"], "test,value");
+
+    js["test-obj"] = obj;
+    js["test-arr"] = arr;
+
+    ASSERT_EQ(js["test-obj"]["num"], 12.34);
+    ASSERT_EQ(js["test-obj"]["bool"], true);
+    ASSERT_EQ(js["test-obj"]["name"], "Hello, World!");
+    ASSERT_EQ(js["test-obj"]["tnull"], "null");
+
+    double dval = js["test-obj"]["num"];
+    bool bval = js["test-obj"]["bool"];
+    string sval = js["test-obj"]["name"];
+
+    JsonNull jnval = js["test-obj"]["tnull"];
+    ASSERT_EQ(jnval, "null");
+
+    JsonNumber jnumval = js["test-obj"]["num"];
+    ASSERT_EQ(jnumval, 12.34);
+
+    JsonString jstrval = js["test-obj"]["name"];
+    ASSERT_EQ(jstrval, "Hello, World!");
+
+    JsonBool jbval = js["test-obj"]["bool"];
+    ASSERT_EQ(jbval, true);
+
+    cout << js.format_json() << endl;
 }
 
 }
