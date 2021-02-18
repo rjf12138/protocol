@@ -246,7 +246,9 @@ TEST_F(WeJson_Test, ObjectTest)
 
     js["test-key"] = "test,value";
     ASSERT_EQ(js["test-key"], "test,value");
-
+    
+    arr.add(obj);
+    obj.add("arr",arr);
     js["test-obj"] = obj;
     js["test-arr"] = arr;
 
@@ -255,22 +257,26 @@ TEST_F(WeJson_Test, ObjectTest)
     ASSERT_EQ(js["test-obj"]["name"], "Hello, World!");
     ASSERT_EQ(js["test-obj"]["tnull"], "null");
 
-    double dval = js["test-obj"]["num"];
-    bool bval = js["test-obj"]["bool"];
-    string sval = js["test-obj"]["name"];
-
     JsonNull jnval = js["test-obj"]["tnull"];
-    ASSERT_EQ(jnval, "null");
+    ASSERT_EQ(jnval.generate(), "null");
 
     JsonNumber jnumval = js["test-obj"]["num"];
     ASSERT_EQ(jnumval, 12.34);
+    double numval = jnumval;
+    ASSERT_EQ(numval, 12.34);
 
     JsonString jstrval = js["test-obj"]["name"];
     ASSERT_EQ(jstrval, "Hello, World!");
+    string strval = jstrval;
+    ASSERT_EQ(strval, "Hello, World!");
 
     JsonBool jbval = js["test-obj"]["bool"];
     ASSERT_EQ(jbval, true);
+    bool bval = jbval;
+    ASSERT_EQ(bval, true);
 
+    WeJson tmp1(js.generate()), tmp2(js.format_json());
+    ASSERT_EQ(tmp1, tmp2);
     cout << js.format_json() << endl;
 }
 

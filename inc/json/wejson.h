@@ -12,7 +12,7 @@ const vector<char> sperate_chars = {' ', '\r', '\n','\t','{', '}','[', ']',',','
 class ValueTypeCast;
 
 enum VALUE_TYPE {
-    UNKNOWN_TYPE = -1000,
+    JSON_UNKNOWN_TYPE = -1000,
     JSON_NUMBER_TYPE = 10001,
     JSON_BOOL_TYPE = 10002,
     JSON_NULL_TYPE = 10003,
@@ -120,11 +120,14 @@ public:
 
     virtual ByteBuffer_Iterator parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_end_pos) override;
     virtual string generate(void) override;
-    
-    operator double();
+
+    double value(void) const  {return value_;}
+    operator double() {return value_;}
 
     bool operator==(const JsonNumber& rhs) const;
     bool operator!=(const JsonNumber& rhs) const;
+    bool operator==(const double& rhs) const;
+    bool operator!=(const double& rhs) const;
     JsonNumber& operator=(JsonNumber rhs);
 
 private:
@@ -141,12 +144,14 @@ public:
 
     virtual ByteBuffer_Iterator parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_end_pos) override;
     virtual string generate(void) override;
-    bool value(void) const  {return value_;}
 
-    operator bool();
+    bool value(void) const  {return value_;}
+    operator bool() {return value_;}
 
     bool operator==(const JsonBool& rhs) const;
     bool operator!=(const JsonBool& rhs) const;
+    bool operator==(const bool& rhs) const;
+    bool operator!=(const bool& rhs) const;
     JsonBool& operator=(JsonBool rhs);
 
 private:
@@ -183,12 +188,14 @@ public:
 
     virtual ByteBuffer_Iterator parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_end_pos) override;
     virtual string generate(void) override;
-    string value(void) const  {return value_;}
 
-    operator string();
+    string value(void) const  {return value_;}
+    operator std::string() {return value_;}
 
     bool operator==(const JsonString& rhs) const;
     bool operator!=(const JsonString& rhs) const;
+    bool operator==(const string& rhs) const;
+    bool operator!=(const string& rhs) const;
     JsonString& operator=(JsonString rhs);
 
 private:
@@ -205,9 +212,7 @@ public:
     // 序列化和反序列化
     virtual ByteBuffer_Iterator parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_end_pos) override;
     virtual string generate(void) override;
-
-    // 元素数量
-    int size(void) const {return object_val_.size();};
+    
     // 查找元素
     JsonIter find(const string &key);
     // 操作元素
@@ -236,8 +241,6 @@ public:
     virtual ByteBuffer_Iterator parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &json_end_pos) override;
     virtual string generate(void) override;
 
-    // 元素数量
-    int size(void) const {return array_val_.size();};
     // 数组或是对象删除元素
     int erase(JsonIndex index);
     // 当前添加元素
@@ -276,16 +279,12 @@ public:
     ValueTypeCast(const ValueTypeCast& value); // 只能使用引用不然会报错
     ~ValueTypeCast(void);
 
-    operator JsonBool();
     operator JsonNumber();
     operator JsonString();
+    operator JsonBool();
     operator JsonObject();
     operator JsonArray();
     operator JsonNull();
-
-    // operator double();
-    // operator string();
-    // operator bool();
 
     ValueTypeCast& operator=(JsonBool val);
     ValueTypeCast& operator=(JsonNumber val);
@@ -312,8 +311,12 @@ public:
     JsonIter find(const string &key);
     // 移除元素元素
     int erase(JsonIndex key);
-    // 当前类型为对象时添加元素
+    // 对象添加元素
     int add(JsonIndex key, ValueTypeCast value);
+    // 数组添加元素
+    int add(ValueTypeCast value);
+    // 返回元素数量
+    int size(void);
     
     VALUE_TYPE get_type(void) const {return json_value_type_;}
     
