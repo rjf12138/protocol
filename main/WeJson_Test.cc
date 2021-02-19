@@ -244,8 +244,12 @@ TEST_F(WeJson_Test, ObjectTest)
     WeJson js("{}"), obj("{\"name\":\"Hello, World!\", \"tnull\": null, \"num\": 12.34, \"bool\": true}"), arr("[true, \"Hello\", null, 12.45]");
     ASSERT_EQ((js.begin() == js.end()), true);
 
-    js["test-key"] = "test,value";
-    ASSERT_EQ(js["test-key"], "test,value");
+    js["str"] = "test,value";
+    js["bool"] = false;
+    js["double"] = 12.3455;
+    js["int"] = 12300;
+    js["null"] = JsonNull();
+    ASSERT_EQ(js["str"], "test,value");
     
     arr.add(obj);
     obj.add("arr",arr);
@@ -260,7 +264,7 @@ TEST_F(WeJson_Test, ObjectTest)
     JsonNull jnval = js["test-obj"]["tnull"];
     ASSERT_EQ(jnval.generate(), "null");
 
-    JsonNumber jnumval = js["test-obj"]["num"];
+    JsonNumber jnumval = js["test-obj"]["num"]; // 不能直接将double类型的json值赋给double
     ASSERT_EQ(jnumval, 12.34);
     double numval = jnumval;
     ASSERT_EQ(numval, 12.34);
@@ -276,8 +280,9 @@ TEST_F(WeJson_Test, ObjectTest)
     ASSERT_EQ(bval, true);
 
     WeJson tmp1(js.generate()), tmp2(js.format_json());
+    tmp2["test-obj"]["num"] = 12.34;
     ASSERT_EQ(tmp1, tmp2);
-    cout << js.format_json() << endl;
+    cout << js.format_json() << endl << js.generate() << endl;
 }
 
 }

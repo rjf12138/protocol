@@ -219,6 +219,8 @@ public:
     int erase(JsonIndex &key);
     // 当前类型为对象时添加元素
     int add(JsonIndex key, ValueTypeCast value);
+    // 返回元素数量
+    int size(void) const {return object_val_.size();}
 
     // 重载操作符
     bool operator==(const JsonObject& rhs) const;
@@ -245,6 +247,8 @@ public:
     int erase(JsonIndex index);
     // 当前添加元素
     int add(ValueTypeCast value);
+    // 返回元素数量
+    int size(void) const {return array_val_.size();}
 
     // 重载操作符
     ValueTypeCast& operator[](size_t key);
@@ -272,6 +276,7 @@ public:
     ValueTypeCast(const JsonNull &value);
     
     ValueTypeCast(const bool &value);
+    ValueTypeCast(const int &value);
     ValueTypeCast(const double &value);
     ValueTypeCast(const string &value);
     ValueTypeCast(const char *value);

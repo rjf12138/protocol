@@ -820,6 +820,8 @@ JsonObject::operator==(const JsonObject& rhs) const
         if (iter_this->second != iter_rhs->second) {
             return false;
         }
+        iter_this++;
+        iter_rhs++;
     }
 
     if (iter_rhs == rhs.object_val_.end() && iter_this == this->object_val_.end()) {
@@ -1003,6 +1005,7 @@ JsonArray::operator==(const JsonArray& rhs) const
 
     return true;
 }
+
 bool JsonArray::operator!=(const JsonArray& rhs) const
 {
     return !(*this == rhs);
@@ -1040,6 +1043,9 @@ ValueTypeCast::ValueTypeCast(const JsonNull &value)
 
 ValueTypeCast::ValueTypeCast(const bool &value)
     :json_value_type_(JSON_BOOL_TYPE), json_bool_value_(value) {}
+
+ValueTypeCast::ValueTypeCast(const int &value)
+    :json_value_type_(JSON_NUMBER_TYPE), json_number_value_(value) {}
 
 ValueTypeCast::ValueTypeCast(const double &value)
     :json_value_type_(JSON_NUMBER_TYPE), json_number_value_(value) {}
@@ -1286,6 +1292,7 @@ string ValueTypeCast::format_json(void)
         string raw_json = this->generate();
 
         bool bracket_flag = false; // 中括号标志，表示在数组内
+        bool quotation_flag = false; // 引号标志
         int tab = 0;
         ostringstream oformat_json;
         for (std::size_t i = 0; i < raw_json.size(); ++i) {
@@ -1308,12 +1315,15 @@ string ValueTypeCast::format_json(void)
                     oformat_json << '\t';
                 }
                 oformat_json << raw_json[i];
-
+                
                 if (raw_json[i] == ']') {
                     bracket_flag = false;
                 }
                 continue;
-            } else if (raw_json[i] == ',' && (raw_json[i+1] == '"' || bracket_flag == true)) {
+            } else if (quotation_flag == false && raw_json[i] == ',' && (raw_json[i+1] == '"' || bracket_flag == true)) {
+                if (raw_json[i+1] == '"') {
+                    quotation_flag = true;
+                }
                 oformat_json << raw_json[i];
                 oformat_json << '\n';
                 for (int j = 0; j < tab; ++j) {
@@ -1321,7 +1331,24 @@ string ValueTypeCast::format_json(void)
                 }
                 continue;
             } else {
+                if (raw_json[i] == '"' && raw_json[i+1] == ',' && quotation_flag == true) {
+                    int pos = i;
+                    int cnt = 0;
+                    for (;pos >= 0; pos--) {
+                        if (raw_json[pos] == '\\') {
+                            cnt ++;
+                        } else {
+                            break;
+                        }
+                    }
+                    if (cnt % 2 == 0) {
+                        quotation_flag = false;
+                    }
+                }
                 oformat_json << raw_json[i];
+                if (raw_json[i] == ':' && quotation_flag == false) { // : 后加个空格
+                    oformat_json << ' ';
+                }
             }
         }
 
