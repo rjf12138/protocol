@@ -507,13 +507,15 @@ JsonBool::operator=(JsonBool rhs)
 
 //////////////////////////////////////////////////////////////
 JsonNull::JsonNull(void)
+ : value_("null")
 {
 
 }
 JsonNull::JsonNull(string val)
+: value_(val)
 {
-    value_ = val;
 }
+
 JsonNull::~JsonNull(void)
 {}
 
@@ -1175,15 +1177,28 @@ ValueTypeCast::operator=(JsonNull val)
 }
 
 ValueTypeCast& 
-ValueTypeCast::operator=(ValueTypeCast val)
+ValueTypeCast::operator=(ValueTypeCast rhs)
 {
-    json_value_type_ = val.json_value_type_;
-    json_bool_value_ = val.json_bool_value_;
-    json_null_value_ = val.json_null_value_;
-    json_array_value_ = val.json_array_value_;
-    json_object_value_ = val.json_object_value_;
-    json_string_value_ = val.json_string_value_;
-    json_number_value_ = val.json_number_value_;
+    json_value_type_ = rhs.json_value_type_;
+    switch (json_value_type_)
+    {
+    case JSON_NULL_TYPE:
+        json_null_value_ = rhs.json_null_value_;
+    case JSON_NUMBER_TYPE:
+        json_number_value_ = rhs.json_number_value_;
+    case JSON_STRING_TYPE:
+        json_string_value_ = rhs.json_string_value_;
+    case JSON_BOOL_TYPE:
+        json_bool_value_ = rhs.json_bool_value_;
+    case JSON_ARRAY_TYPE:
+        json_array_value_ = rhs.json_array_value_;
+    case  JSON_OBJECT_TYPE:
+        json_object_value_ = rhs.json_object_value_;
+    default:
+        break;
+    }
+
+    return *this;
 
     return *this;
 }
@@ -1291,8 +1306,8 @@ string ValueTypeCast::format_json(void)
     if (json_value_type_ == JSON_OBJECT_TYPE || json_value_type_ == JSON_ARRAY_TYPE){
         string raw_json = this->generate();
 
-        bool bracket_flag = false; // 中括号标志，表示在数组内
-        bool quotation_flag = false; // 引号标志
+        bool bracket_flag = false;      // 中括号标志， 表示在数组内
+        bool quotation_flag = false;    // 引号标志， 表示在字符串内
         int tab = 0;
         ostringstream oformat_json;
         for (std::size_t i = 0; i < raw_json.size(); ++i) {
@@ -1331,12 +1346,12 @@ string ValueTypeCast::format_json(void)
                 }
                 continue;
             } else {
-                if (raw_json[i] == '"' && raw_json[i+1] == ',' && quotation_flag == true) {
+                if (raw_json[i] == '"' && (raw_json[i+1] == ',' || raw_json[i+1] == ':') && quotation_flag == true) {
                     int pos = i;
                     int cnt = 0;
                     for (;pos >= 0; pos--) {
                         if (raw_json[pos] == '\\') {
-                            cnt ++;
+                            cnt++;
                         } else {
                             break;
                         }
@@ -1348,6 +1363,9 @@ string ValueTypeCast::format_json(void)
                 oformat_json << raw_json[i];
                 if (raw_json[i] == ':' && quotation_flag == false) { // : 后加个空格
                     oformat_json << ' ';
+                    if (raw_json[i+1] == '"') { // 进入值字符串
+                        quotation_flag = true;
+                    } 
                 }
             }
         }

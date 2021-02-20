@@ -244,15 +244,22 @@ TEST_F(WeJson_Test, ObjectTest)
     WeJson js("{}"), obj("{\"name\":\"Hello, World!\", \"tnull\": null, \"num\": 12.34, \"bool\": true}"), arr("[true, \"Hello\", null, 12.45]");
     ASSERT_EQ((js.begin() == js.end()), true);
 
-    js["str"] = "test,value";
-    js["bool"] = false;
+    js["st,r"] = "te\nst,val   ue";
+    js["bo ol"] = false;
     js["double"] = 12.3455;
     js["int"] = 12300;
+
+    cout << obj.format_json() <<endl;
+
     js["null"] = JsonNull();
-    ASSERT_EQ(js["str"], "test,value");
+    ASSERT_EQ(js["st,r"], "te\nst,val   ue");
     
+    cout << js.format_json() <<endl;
+
     arr.add(obj);
-    obj.add("arr",arr);
+    obj.add("arr", arr);
+    arr.add(obj);
+    obj.add("arr2", arr);
     js["test-obj"] = obj;
     js["test-arr"] = arr;
 
@@ -260,6 +267,12 @@ TEST_F(WeJson_Test, ObjectTest)
     ASSERT_EQ(js["test-obj"]["bool"], true);
     ASSERT_EQ(js["test-obj"]["name"], "Hello, World!");
     ASSERT_EQ(js["test-obj"]["tnull"], "null");
+
+    ASSERT_EQ(js["test-obj"]["arr"][0], true);
+    ASSERT_EQ(js["test-obj"]["arr"][1], "Hello");
+    ASSERT_EQ(js["test-obj"]["arr"][2], JsonNull());
+    ASSERT_EQ(js["test-obj"]["arr"][3], 12.45);
+    ASSERT_EQ(js["test-obj"]["arr"][4]["name"], "Hello, World!");
 
     JsonNull jnval = js["test-obj"]["tnull"];
     ASSERT_EQ(jnval.generate(), "null");
@@ -282,7 +295,17 @@ TEST_F(WeJson_Test, ObjectTest)
     WeJson tmp1(js.generate()), tmp2(js.format_json());
     tmp2["test-obj"]["num"] = 12.34;
     ASSERT_EQ(tmp1, tmp2);
-    cout << js.format_json() << endl << js.generate() << endl;
+    ASSERT_EQ(tmp1.generate(), tmp2.generate());
+    // cout << js.format_json() << endl << js.generate() << endl;
+
+    WeJson cpy_js;
+    cpy_js = js;
+    cout << cpy_js.format_json() << endl;
+    
+    ASSERT_EQ(cpy_js, js);
+    cpy_js["test-obj"]["num"] = 12.3;
+    ASSERT_NE(cpy_js["test-obj"]["num"], 12.34);
+    ASSERT_EQ(cpy_js["test-obj"]["num"], 12.3);
 }
 
 }
