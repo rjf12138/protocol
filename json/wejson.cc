@@ -1023,7 +1023,9 @@ JsonArray::operator=(JsonArray rhs)
 
 /////////////////////////////////////////////////////////////////
 
-ValueTypeCast::ValueTypeCast(void) {}
+ValueTypeCast::ValueTypeCast(void) 
+:json_value_type_(JSON_UNKNOWN_TYPE)
+{}
 
 ValueTypeCast::ValueTypeCast(const JsonBool &value)
     : json_value_type_(JSON_BOOL_TYPE), json_bool_value_(value) {}

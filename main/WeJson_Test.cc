@@ -300,12 +300,59 @@ TEST_F(WeJson_Test, ObjectTest)
 
     WeJson cpy_js;
     cpy_js = js;
-    cout << cpy_js.format_json() << endl;
+    // cout << cpy_js.format_json() << endl;
     
     ASSERT_EQ(cpy_js, js);
     cpy_js["test-obj"]["num"] = 12.3;
     ASSERT_NE(cpy_js["test-obj"]["num"], 12.34);
     ASSERT_EQ(cpy_js["test-obj"]["num"], 12.3);
+
+
+    WeJson obj1("{}"), arr1("[]");
+
+    // 方式1
+    obj1.add("str", "Hello"); // 对象是键值对
+    obj1.add("int", 123);
+    obj1.add("bool", false);
+    obj1.add("null", JsonNull());
+
+    arr1.add("Hello"); // 数组直接添加值
+    arr1.add(123);
+    arr1.add(false);
+    arr1.add(JsonNull());
+
+    // 方式2
+    obj1["str"] = "Hello";
+    obj1["int"] = 123;
+    obj1["bool"] = false;
+    obj1["null"] = JsonNull();
+
+    arr1[0] = "Hel\"lo"; // 数组直接添加值
+    arr1[1] = 123;
+    arr1[2] = false;
+    arr1[3] = JsonNull();
+
+    // 迭代器
+    cout << "============== Object ==============" << endl;
+    for (JsonIter iter = obj1.begin(); iter != obj1.end(); ++iter) {
+        cout << iter.second().generate() << endl;
+    }
+    cout << "============== Array ==============" << endl;
+    for (JsonIter iter = arr1.begin(); iter != arr1.end(); ++iter) {
+        cout << iter.second().generate() << endl;
+    }
+    cout << "=============== End =================" << endl;
+    arr1[4] = obj1;
+    obj1.add("arr", arr1);
+    // obj1.generate();  // 输出后时压缩的
+    // obj1.format_json();// 输出后会格式化
+
+    cout << obj1.format_json() << endl;
+
+    obj1.erase("str"); // 对像移除关键字为str的元素
+    arr1.erase(3); // 数组移除下标是 3 的元素
+    // cout << obj1.format_json() << endl;
+    // cout << arr1.format_json() << endl;
 }
 
 }
