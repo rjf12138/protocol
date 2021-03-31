@@ -5,17 +5,6 @@
 #include "buffer/byte_buffer.h"
 
 namespace my_utils {
-#define HTTP_VERSION    "HTTP/1.1"
-
-#define HTTP_METHOD_UNKNOWN "-1"
-#define HTTP_METHOD_GET     "GET"
-#define HTTP_METHOD_POST    "POST"
-#define HTTP_METHOD_PUT     "PUT"
-#define HTTP_METHOD_DELETE  "DELETE"
-#define HTTP_METHOD_HEAD    "HEAD"
-#define HTTP_METHOD_OPTION  "OPTION"
-
-#define HTTP_HEADER_OPTION_
 
 class HttpPtl {
 public:
