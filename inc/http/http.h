@@ -3,8 +3,8 @@
 
 #include "basic_head.h"
 #include "buffer/byte_buffer.h"
-#include "buffer/str_buffer.h"
 
+namespace my_utils {
 #define HTTP_VERSION    "HTTP/1.1"
 
 #define HTTP_METHOD_UNKNOWN "-1"
@@ -22,23 +22,24 @@ public:
     HttpPtl(void);
     virtual ~HttpPtl(void);
 
-    int parser(const ByteBuffer &data);
-    int generate(CRQueue& data);
+    int parser(ByteBuffer &data);
+    int generate(ByteBuffer& data);
 
-    int set_content(const CRQueue& data);
+    int set_content(ByteBuffer& data);
     int set_header(string method, int status, string reason_phrase);
     int set_header_option(const string &key, const string &value);
 
     int get_status(void);
     string get_method(void);
     string get_header_option(const string &key);
-    int get_content(CRQueue &data);
+    int get_content(ByteBuffer &data);
 
 private:
-    int _status;
-    string _method;
-    string _reason_phrase;
-    map<string, string> _header;
+    int status_;
+    string method_;
+    string reason_phrase_;
+    map<string, string> header_;
 };
 
+}
 #endif
