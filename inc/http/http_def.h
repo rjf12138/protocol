@@ -27,7 +27,7 @@
 #define HTTP_STATUS_BadRequest        400       // 该状态码表示请求报文中存在语法错误
 #define HTTP_STATUS_Unauthorized      401       // 该状态码表示发送的请求需要有通过 HTTP 认证(BASIC 认证、DIGEST 认证)的认证信息。另外若之前已进行过 1 次请求,则表示用 户认证失败。
 #define HTTP_STATUS_Forbidden         403       // 该状态码表明对请求资源的访问被服务器拒绝了。
-#define HTTP_STATUS_NotFount          404       // 该状态码表明服务器上无法找到请求的资源。
+#define HTTP_STATUS_NotFound          404       // 该状态码表明服务器上无法找到请求的资源。
 // 状态吗 5XX： 表明服务器本身发生错误。
 #define HTTP_STATUS_InternalServerError 500     // 该状态码表明服务器端在执行请求时发生了错误。
 #define HTTP_STATUS_ServiceUnavailable  503     // 该状态码表明服务器暂时处于超负载或正在进行停机维护,现在无法处理请求。
