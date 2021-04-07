@@ -4,13 +4,14 @@
 #define HTTP_VERSION    "HTTP/1.1"
 
 // http 请求方法
-#define HTTP_METHOD_UNKNOWN "NONE"
-#define HTTP_METHOD_GET     "GET"
-#define HTTP_METHOD_POST    "POST"
-#define HTTP_METHOD_PUT     "PUT"
-#define HTTP_METHOD_DELETE  "DELETE"
-#define HTTP_METHOD_HEAD    "HEAD"
-#define HTTP_METHOD_OPTION  "OPTION"
+#define HTTP_METHOD_UNKNOWN     "NONE"
+#define HTTP_METHOD_GET         "GET"
+#define HTTP_METHOD_POST        "POST"
+#define HTTP_METHOD_PUT         "PUT"
+#define HTTP_METHOD_DELETE      "DELETE"
+#define HTTP_METHOD_HEAD        "HEAD"
+#define HTTP_METHOD_OPTION      "OPTION"
+#define HTTP_METHOD_RESPONE     HTTP_VERSION
 
 // http 返回状态
 // 状态码 2XX： 表明请求被正常处理了

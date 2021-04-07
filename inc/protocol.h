@@ -1,9 +1,7 @@
 #ifndef __PROTOCOL__
 #define __PROTOCOL__
 
-#include "basic_head.h"
-#include "msg_record.h"
-#include "buffer/byte_buffer.h"
+#include "http/http.h"
 
 enum ProtocolType {
     ProtocolType_Raw = 0,           // 原始数据，不做任何解析
@@ -20,20 +18,21 @@ namespace my_utils {
 int encode_base64(char *inbuf, int inlen, char *outbuf, int outlen);
 int decode_base64(char* inbuf, int inlen, char* outbuf, int outlen);
 
-class Protocol {
+class ProtocolParser {
 public:
-    Protocol(void);
-    Protocol(ProtocolType type);
-    virtual ~Protocol(void);
+    ProtocolParser(void);
+    ProtocolParser(ProtocolType type);
+    virtual ~ProtocolParser(void);
 
     void set_protocol_type(ProtocolType type);
     ProtocolType get_protocol_type(void) const;
+    ByteBuffer& get_protocol_buff(void);
 
-    virtual ByteBuffer& get_protocol_buff(void);
-
+    int get_http_packet(HttpPtl &ptl);
 private:
     ProtocolType protocol_type_;
     ProtocolParseState parse_state_;
+    ByteBuffer data_;
 };
 
 };

@@ -1,15 +1,15 @@
 #ifndef __HTTP_H_
 #define __HTTP_H_
 
+#include "basic_head.h"
 #include "http_def.h"
-#include "protocol.h"
+#include "buffer/byte_buffer.h"
 
 namespace my_utils {
 
-class HttpPtl : public Protocol{
+class HttpPtl {
 public:
     HttpPtl(void);
-    HttpPtl(ByteBuffer &data);
     virtual ~HttpPtl(void);
 
     int parser(ByteBuffer &data);
@@ -21,6 +21,7 @@ public:
 
     int get_status(void);
     string get_method(void);
+    string get_phrase(void);
     string get_header_option(const string &key);
     int get_content(ByteBuffer &data);
     
@@ -28,7 +29,8 @@ private:
     string get_status_phrase(int status);
 
 private:
-    int status_;
+    int code_;
+    string url_;
     string method_;
     ByteBuffer content_;
     map<string, string> header_;
