@@ -2,7 +2,8 @@
 #define __JSON_TYPE_H__
 
 #include "basic_head.h"
-#include "protocol.h"
+#include "buffer/byte_buffer.h"
+#include "msg_record.h"
 
 namespace my_utils {
 

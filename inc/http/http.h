@@ -15,11 +15,13 @@ public:
     int parser(ByteBuffer &data);
     int generate(ByteBuffer &data);
 
+    int set_request(const string &method, const string &url);
+    int set_response(int code, const string &phrase);
     int set_content(ByteBuffer &data);
-    int set_header(const string &method, int status);
     int set_header_option(const string &key, const string &value);
 
-    int get_status(void);
+
+    int get_status_code(void);
     string get_method(void);
     string get_phrase(void);
     string get_header_option(const string &key);
@@ -29,9 +31,11 @@ private:
     string get_status_phrase(int status);
 
 private:
+    bool is_request;
     int code_;
     string url_;
     string method_;
+    string phrase_;
     ByteBuffer content_;
     map<string, string> header_;
 };
