@@ -1,6 +1,6 @@
-#include "http.h"
+#include "http/http.h"
 
-namespace my_utils {
+namespace my_protocol {
 
 HttpPtl::HttpPtl(void)
 {
@@ -12,7 +12,7 @@ HttpPtl::~HttpPtl(void)
 
 }
 
-int 
+HttpParse_ErrorCode 
 HttpPtl::parser(ByteBuffer &data)
 {
     is_request = true;
@@ -82,7 +82,7 @@ HttpPtl::parser(ByteBuffer &data)
         }
     }
 
-    return -1; // 查找 HTTP 头失败
+    return HttpParse_CantFindHttp; // 查找 HTTP 头失败
 
 __HTTP_HEAD__:
     data.update_read_pos(iter - start_pos_iter); // 更新ByteBuffer读位置到http协议开始的位置
@@ -95,14 +95,13 @@ __HTTP_HEAD__:
     vector<ByteBuffer_Iterator> http_body_pos = data.find(ByteBuffer("\r\n\r\n"));
 
     if (http_body_pos.size() <= 0 ) { // 找不到报文主体开始的位置
-        return -1;
+        return HttpParse_CantFindBody;
     }
 
     if (http_length_pos.size() <= 0) {
         body_length = 0;
-    }
-    else {
-    ByteBuffer_Iterator header_value_start_iter = http_length_pos[0] + strlen(HTTP_HEADER_ContentLength); // 获取报文主体的长度
+    } else {
+        ByteBuffer_Iterator header_value_start_iter = http_length_pos[0] + strlen(HTTP_HEADER_ContentLength); // 获取报文主体的长度
         for (; header_value_start_iter != data.end(); ++header_value_start_iter) {
             if (*header_value_start_iter == ':' || *header_value_start_iter == ' ') {
                 continue;
@@ -118,7 +117,7 @@ __HTTP_HEAD__:
     ByteBuffer_Iterator body_start_iter = http_body_pos[0] + 4; // 跳过分割符 \r\n\r\n
     ByteBuffer_Iterator last_pos = data.last_data();
     if (last_pos - body_start_iter + 1 < body_length) {
-        return -1; // 缓存中的报文主体不够
+        return HttpParse_ContentNotEnough; // 缓存中的报文主体不够
     } else {
         data.get_data(content_, body_start_iter, body_length); // 获取报文主体
     }
@@ -129,7 +128,7 @@ __HTTP_HEAD__:
 
     // 解析报文请求行
     bool flag = false;
-    ostr.clear();
+    ostr.str("");
     auto http_request_iter = headers[0].begin() + method_.length(); // 跳过http方法，前面解析过了
     while (http_request_iter != headers[0].end()) {       // 获取请求行url或是回复的错误码
         if (*http_request_iter == ' ' && flag == false) {
@@ -140,18 +139,19 @@ __HTTP_HEAD__:
             continue;
         } else if (*http_request_iter != ' ' && flag == true) {
             ostr << *http_request_iter;
+            ++http_request_iter;
         } else if ((*http_request_iter == ' ' && flag == true)) {
             if (method_ == HTTP_METHOD_RESPONE) {
                 code_ = stoll(ostr.str());
             } else {
                 url_ = ostr.str();
             }
-            flag = false;
             break;
         }
     }
 
-    ostr.clear(); // 获取请求的协议类型，或是回复的消息短语
+    flag = false;
+    ostr.str(""); // 获取请求的协议类型，或是回复的消息短语
     while (http_request_iter != headers[0].end()) {
         if (*http_request_iter == ' ' && flag == false) {
             ++http_request_iter;
@@ -160,6 +160,7 @@ __HTTP_HEAD__:
             flag = true;
         } else if (flag == true) {
             ostr << *http_request_iter;
+            ++http_request_iter;
         }
     }
 
@@ -167,15 +168,15 @@ __HTTP_HEAD__:
         phrase_ = ostr.str();
     } else {
         if (ostr.str() != HTTP_VERSION) { // 检查请求协议的版本是不是HTTP/1.1
-            return -1;
+            return HttpParse_HttpVersionNotMatch;
         }
     }
 
     // 处理 HTTP 首部字段
     std::string key;
     for (std::size_t i = 1; i < headers.size(); ++i) {
-        ostr.clear();
-        std::size_t j = 0;
+        ostr.str("");
+        BUFSIZE_T j = 0;
         for (; j < headers[i].data_size(); ++j) {
             if (headers[i][j] == ':') {
                 key = ostr.str();
@@ -185,15 +186,22 @@ __HTTP_HEAD__:
             ostr << headers[i][j];
         }
         
+        if ((j == headers[i].data_size() && headers[i][j-1] != ':') || 
+             key == "") {
+            return HttpParse_ParseHeaderFailed;
+        }
+
         flag = false;
-        ostr.clear();
-        for (; j < headers[i].data_size(); ++j) {
+        ostr.str("");
+        for (; j < headers[i].data_size(); ) {
             if (headers[i][j] == ' ' && flag == false) {
+                ++j;
                 continue;
             } else if (headers[i][j] != ' ' && flag == false) {
                 flag = true;
             } else {
                 ostr << headers[i][j];
+                ++j;
             }
         }
         header_[key] = ostr.str();
@@ -203,7 +211,7 @@ __HTTP_HEAD__:
     BUFSIZE_T http_packet_size = http_body_pos[0] - http_begin_iter + body_length + 4; // 计算 http 包大小 +4 是为了计入 \r\n\r\n
     data.update_read_pos(http_packet_size);
 
-    return 0;
+    return HttpParse_OK;
 }
 
 int 
@@ -268,6 +276,13 @@ HttpPtl::set_response(int code, const string &phrase)
 }
 
 int 
+HttpPtl::set_phrase(string phrase)
+{
+    phrase_ = phrase;
+    return 0;
+}
+
+int 
 HttpPtl::set_header_option(const string &key, const string &value)
 {
     header_[key] = value;
@@ -278,31 +293,26 @@ HttpPtl::set_header_option(const string &key, const string &value)
 int 
 HttpPtl::get_status_code(void)
 {
-
+    return code_;
 }
 
 string 
 HttpPtl::get_method(void)
 {
-
+    return method_;
 }
 
 string 
 HttpPtl::get_header_option(const string &key)
 {
-
+    return header_[key];
 }
 
-int 
+BUFSIZE_T 
 HttpPtl::get_content(ByteBuffer &data)
 {
-
-}
-
-string 
-HttpPtl::get_status_phrase(int status)
-{
-
+    data = content_;
+    return data.data_size();
 }
 
 }

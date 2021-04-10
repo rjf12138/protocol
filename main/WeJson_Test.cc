@@ -1,7 +1,7 @@
 #include "json/wejson.h"
 #include "gtest/gtest.h"
 
-using namespace my_utils;
+using namespace my_protocol;
 //////////////////////////////////////////////////
 void random_str(int setlen, ByteBuffer &buff1, ByteBuffer &buff2)
 {

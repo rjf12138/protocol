@@ -24,11 +24,12 @@ public:
     ProtocolParser(ProtocolType type);
     virtual ~ProtocolParser(void);
 
+    void clear(void);
     void set_protocol_type(ProtocolType type);
     ProtocolType get_protocol_type(void) const;
     ByteBuffer& get_protocol_buff(void);
 
-    int get_http_packet(HttpPtl &ptl);
+    HttpParse_ErrorCode get_http_packet(HttpPtl &ptl);
 private:
     ProtocolType protocol_type_;
     ProtocolParseState parse_state_;

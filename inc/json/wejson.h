@@ -5,8 +5,8 @@
 #include "buffer/byte_buffer.h"
 #include "msg_record.h"
 
-namespace my_utils {
-
+namespace my_protocol {
+using namespace my_utils;
 // json中重要的分割字符
 const vector<char> sperate_chars = {' ', '\r', '\n','\t','{', '}','[', ']',',',':','"'};
 

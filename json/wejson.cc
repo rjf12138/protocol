@@ -1,6 +1,6 @@
 #include "json/wejson.h"
 
-namespace my_utils {
+namespace my_protocol {
 
 JsonIndex::JsonIndex(void)
  : index_type_(JSON_NUMBER_TYPE),
