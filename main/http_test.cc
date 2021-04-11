@@ -47,17 +47,72 @@ Hello, Http!";
 
 TEST_F(Http_Test, Basic_Test)
 {
-    HttpPtl http;
-    ProtocolParser ptl;
-    ptl.get_protocol_buff().write_string(http_respone);
-    ptl.get_http_packet(http);
+    vector<int>    head_code = {HTTP_STATUS_OK, HTTP_STATUS_NoContent, HTTP_STATUS_Found, HTTP_STATUS_NotFound};
+    vector<string> head_phrase = {"OK", "NoContent", "Found", "NotFound"};
+    vector<string> head_method = {HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_PUT, HTTP_METHOD_DELETE, HTTP_METHOD_HEAD, HTTP_METHOD_OPTION};
+    vector<string> head_option = {HTTP_HEADER_ContentEncoding, HTTP_HEADER_ContentLanguage, HTTP_HEADER_Allow, HTTP_HEADER_Host, HTTP_HEADER_IfNoneMatch};
+    vector<string> head_value = {"rjfzip", "zh_CN", "allow", "RjfWebServer;kkk", "!@#$%^&*()_+"};
+    vector<string> head_url = {"/file/index.html"};
 
-    string str;
-    ByteBuffer out;
-    http.generate(out);
-    out.read_string(str);
+    HttpPtl ptl1, ptl2;
+    ByteBuffer content("Hello, Http!"), ptl_stream;
 
-    cout << endl << str << std::endl;
+    // 测试http请求
+    ASSERT_EQ(head_value.size(), head_option.size());
+    for (std::size_t j = 0; j < head_method.size(); ++j) {
+        ptl1.set_request(head_method[j], head_url[0]);
+        for (std::size_t i = 0; i < head_option.size(); ++i) {
+            ptl1.set_header_option(head_option[i], head_value[i]);
+        }
+
+        ptl1.set_header_option(HTTP_HEADER_ContentLength, std::to_string(content.data_size()));
+        ptl1.set_content(content);
+
+        ptl_stream.clear();
+        ptl1.generate(ptl_stream);
+        ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
+
+        ByteBuffer data;
+        ptl2.get_content(data);
+        ASSERT_EQ(data, content);
+        ASSERT_EQ(ptl2.get_method(), head_method[j]);
+        for (std::size_t i = 0; i < head_option.size(); ++i) {
+            ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
+        }
+
+        auto begin_iter = ptl_stream.begin();
+        ptl_stream.insert_front(begin_iter, ByteBuffer("fjlkakjflsdfjlairuwoerjwnv"));
+        ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
+        
+        ptl2.get_content(data);
+        ASSERT_EQ(data, content);
+        ASSERT_EQ(ptl2.get_method(), head_method[j]);
+        for (std::size_t i = 0; i < head_option.size(); ++i) {
+            ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
+        }
+    }
+
+    // 测试http响应
+    for (std::size_t j = 0; j < head_code.size(); ++j) {
+        ptl1.set_response(head_code[j], head_phrase[0]);
+        for (std::size_t i = 0; i < head_option.size(); ++i) {
+            ptl1.set_header_option(head_option[i], head_value[i]);
+        }
+
+        ptl1.set_header_option(HTTP_HEADER_ContentLength, std::to_string(content.data_size()));
+        ptl1.set_content(content);
+        ptl1.generate(ptl_stream);
+
+        ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
+
+        ByteBuffer data;
+        ptl2.get_content(data);
+        ASSERT_EQ(data, content);
+        ASSERT_EQ(ptl2.get_status_code(), head_code[j]);
+        for (std::size_t i = 0; i < head_option.size(); ++i) {
+            ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
+        }
+    }
 }
 
 }

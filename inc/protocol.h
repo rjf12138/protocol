@@ -14,7 +14,7 @@ enum ProtocolParseState {
     ProtocolType_Parsing = 1,          // 当前解析一半，等待剩余数据
 };
 
-namespace my_utils {
+namespace my_protocol {
 int encode_base64(char *inbuf, int inlen, char *outbuf, int outlen);
 int decode_base64(char* inbuf, int inlen, char* outbuf, int outlen);
 
