@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../output/debug/lib/libhttp.a  CMakeFiles/http.dir/http.cc.o
+/usr/bin/ranlib ../../output/debug/lib/libhttp.a

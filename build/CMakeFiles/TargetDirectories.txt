@@ -1,0 +1,14 @@
+/home/ruanjian/workspace/project_pre/protocol/build/CMakeFiles/rebuild_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/CMakeFiles/edit_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/json/CMakeFiles/rebuild_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/json/CMakeFiles/edit_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/json/CMakeFiles/json.dir
+/home/ruanjian/workspace/project_pre/protocol/build/http/CMakeFiles/rebuild_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/http/CMakeFiles/edit_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/http/CMakeFiles/http.dir
+/home/ruanjian/workspace/project_pre/protocol/build/src/CMakeFiles/rebuild_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/src/CMakeFiles/edit_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/src/CMakeFiles/protocol.dir
+/home/ruanjian/workspace/project_pre/protocol/build/main/CMakeFiles/rebuild_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/main/CMakeFiles/edit_cache.dir
+/home/ruanjian/workspace/project_pre/protocol/build/main/CMakeFiles/http_test.dir

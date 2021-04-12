@@ -1,0 +1,10 @@
+file(REMOVE_RECURSE
+  "../../output/debug/lib/libprotocol.a"
+  "../../output/debug/lib/libprotocol.pdb"
+  "CMakeFiles/protocol.dir/protocol.cc.o"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/protocol.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()
