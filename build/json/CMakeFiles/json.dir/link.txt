@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../../output/debug/lib/libjson.a  CMakeFiles/json.dir/wejson.cc.o
-/usr/bin/ranlib ../../output/debug/lib/libjson.a
