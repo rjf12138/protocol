@@ -10,27 +10,27 @@ WebsocketPtl::~WebsocketPtl(void)
 {
 }
 
-int 
-WebsocketPtl::print_hex(int8_t val)
+Int32 
+WebsocketPtl::print_hex(Int8 val)
 {
     const char *buf = "0123456789ABCDEF";
-    int high = val >> 4 & 0x0f;
-    int low = val & 0x0f;
+    Int32 high = val >> 4 & 0x0f;
+    Int32 low = val & 0x0f;
 
     printf("%c%c", buf[high], buf[low]);
 
     return 0;
 }
 
-uint64_t 
-WebsocketPtl::ntohll(uint64_t host)
+UInt64 
+WebsocketPtl::ntohll(UInt64 host)
 {
     if (check_end() == 0)
     {
         return host;
     }
-    uint64_t   ret = 0;
-    uint32_t   high, low;
+    UInt64   ret = 0;
+    UInt32   high, low;
 
     low = host & 0xFFFFFFFF;
     high = (host >> 32) & 0xFFFFFFFF;
@@ -44,15 +44,15 @@ WebsocketPtl::ntohll(uint64_t host)
     return ret;
 }
 
-uint64_t 
-WebsocketPtl::htonll(uint64_t host)
+UInt64 
+WebsocketPtl::htonll(UInt64 host)
 {
     if (check_end() == 0)
     {
         return host;
     }
-    uint64_t   ret = 0;
-    uint32_t   high, low;
+    UInt64   ret = 0;
+    UInt32   high, low;
 
     low = host & 0xFFFFFFFF;
     high = (host >> 32) & 0xFFFFFFFF;
@@ -66,13 +66,12 @@ WebsocketPtl::htonll(uint64_t host)
     return ret;
 }
 
-int
+Int32
 WebsocketPtl::check_end()
 {
-    union
-    {
+    union {
         char c;
-        int i;
+        Int32 i;
     }un;
     un.i = 1;
     return un.c;
@@ -81,103 +80,77 @@ WebsocketPtl::check_end()
 WebsocketParse_ErrorCode 
 WebsocketPtl::parse(ByteBuffer &buff)
 {
-    int len = buff.data_size();
-    msg_pos_ = 0;
-    if (len >= 1)
-    {
-        fin_ = (unsigned char)buff[msg_pos_] >> 7;
-        opcode_ = static_cast<ENUM_WEBSOCKET_OPCODE>(buff[msg_pos_] & 0x0f);
-        msg_pos_++;
-    }
-    else
-    {
+    UInt8 mask = 0;
+    UInt8 masking_key[4] = {0};
+    UInt64 msg_pos = 0;
+    UInt64 payload_length = 0;
+    UInt64 len = buff.data_size();
+    if (len >= 1) {
+        fin_ = (unsigned char)buff[msg_pos] >> 7;
+        opcode_ = static_cast<ENUM_WEBSOCKET_OPCODE>(buff[msg_pos] & 0x0f);
+        msg_pos++;
+    } else {
         return WebsocketParse_PacketNotEnough;
     }
 
-    if (len >= 2)
-    {
-        mask_ = (unsigned char)buff[msg_pos_] >> 7;
-        payload_length_ = buff[msg_pos_] & 0x7f;
-        msg_pos_++;
-    }
-    else
-    {
+    if (len >= 2) {
+        mask = (UInt8)buff[msg_pos] >> 7;
+        payload_length = buff[msg_pos] & 0x7f;
+        msg_pos++;
+    } else {
         return WebsocketParse_PacketNotEnough;
     }
        
-    if (payload_length_ < 126 && payload_length_ >= 0)
-    {
+    if (payload_length < 126 && payload_length >= 0) {
         // 
-    }
-    else if (payload_length_ == 126 && len >= msg_pos_ + 2) 
-    {
+    } else if (payload_length == 126 && len >= msg_pos + 2) {
         uint16_t length = 0;
-        
-        memcpy(&length, data + msg_pos_, 2);
-        msg_pos_ += 2;
-        payload_length_ = ::ntohs(length);
-    }
-    else if (payload_length_ == 127 && nLen >= msg_pos_ + 8) 
-    {
-        uint64_t length = 0;
-        memcpy(&length, data + msg_pos_, 8);
-        msg_pos_ += 8;
-        payload_length_ = this->ntohll(length);
-    }
-    else
-    {
-        return EHPR_NULL;
+        buff.read_only(msg_pos, &length, sizeof(uint16_t));
+        msg_pos += 2;
+        payload_length = ::ntohs(length);
+    } else if (payload_length == 127 && len >= msg_pos + 8) {
+        UInt64 length = 0;
+        buff.read_only(msg_pos, &length, sizeof(UInt64));
+        msg_pos += 8;
+        payload_length = this->ntohll(length);
+    } else {
+        return WebsocketParse_PacketNotEnough;
     }
 
-    if (mask_ == 1 && nLen >= msg_pos_ +4)
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            _masking_key[i] = data[msg_pos_ + i];
+    if (mask == 1 && len >= msg_pos + 4) {
+        for (Int32 i = 0; i < 4; i++) {
+            masking_key[i] = buff[msg_pos + i];
         }
-        msg_pos_ += 4;
-    }
-    else if (mask_ == 0)
-    {
-    }
-    else
-    {
-        return EHPR_NULL;
+        msg_pos += 4;
+    } else if (mask == 0) {
+    } else {
+        return WebsocketParse_PacketNotEnough;
     }
 
-    if (nLen >= msg_pos_ + payload_length_)
-    {
-        char* szPayload = new char[payload_length_];
-        memset(szPayload, 0, payload_length_);
-        if (mask_ != 1)
-        {
-            memcpy(szPayload, data + msg_pos_, payload_length_);
-        }
-        else
-        {
-            for (unsigned i = 0; i < payload_length_; i++)
-            {
-                int j = i % 4;
-                szPayload[i] = data[msg_pos_ + i] ^ _masking_key[j];
+    if (len >= msg_pos + payload_length) {
+        data_.clear();
+        if (mask != 1) {
+            auto copy_start_iter = buff.begin() + msg_pos;
+            buff.get_data(data_, copy_start_iter, payload_length);
+        } else {
+            for (UInt64 i = 0; i < payload_length; i++) {
+                data_.write_int8(buff[msg_pos + i] ^ masking_key[i % 4]);
             }
         }
-        msg_pos_ += payload_length_;
-        _szData = szPayload;
+        msg_pos += payload_length;
+    } else {
+        return WebsocketParse_PacketNotEnough;
     }
-    else
-    {
-        return EHPR_NULL;
-    }
-    return EHPR_COMPELETE;
+    return WebsocketParse_OK;
 }
 
-int 
-WebsocketPtl::generate(ByteBuffer &out, ByteBuffer &content, int8_t nOpcode, bool bMask)
+Int32 
+WebsocketPtl::generate(ByteBuffer &out, ByteBuffer &content, Int8 nOpcode, bool bMask)
 {
     out.clear();
 
     BUFSIZE_T len = content.data_size();
-    int start_pos = 0;
+    Int32 start_pos = 0;
     // add fin and opcode
     char cbyte = 0x8;
     cbyte = (cbyte << 4) | (nOpcode & 0xf);
@@ -204,14 +177,14 @@ WebsocketPtl::generate(ByteBuffer &out, ByteBuffer &content, int8_t nOpcode, boo
         cbyte |= 127;
         out.write_int8(cbyte);
         start_pos++;
-        uint64_t uLength = this->htonll(len) & 0x7FFFFFFFFFFFFFFF;
+        UInt64 uLength = this->htonll(len) & 0x7FFFFFFFFFFFFFFF;
         out.write_int64(uLength);
         start_pos += 8;
     }
 
     if (bMask) {
         srand(time(NULL));
-        uint32_t rand_num = rand();
+        UInt32 rand_num = rand();
         out.write_int32(rand_num);
 
         for (unsigned i = 0; i < len; i++) {
@@ -224,7 +197,7 @@ WebsocketPtl::generate(ByteBuffer &out, ByteBuffer &content, int8_t nOpcode, boo
     return out.data_size();
 }
 
-int
+Int32
 WebsocketPtl::get_content(ByteBuffer &out)
 {
     if (fin_ == 1)

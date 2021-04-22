@@ -55,4 +55,14 @@ ProtocolParser::get_http_packet(HttpPtl &ptl)
     return ptl.parser(data_);
 }
 
+WebsocketParse_ErrorCode 
+ProtocolParser::get_websocket_packet(WebsocketPtl &ptl)
+{
+    if (protocol_type_ != ProtocolType_Websocket) {
+        return WebsocketParse_NotSupportWebsocket;
+    }
+
+    return ptl.parse(data_);
+}
+
 };

@@ -2,6 +2,7 @@
 #define __PROTOCOL__
 
 #include "http/http.h"
+#include "websocket/websocket.h"
 
 enum ProtocolType {
     ProtocolType_Raw = 0,           // 原始数据，不做任何解析
@@ -30,6 +31,8 @@ public:
     ByteBuffer& get_protocol_buff(void);
 
     HttpParse_ErrorCode get_http_packet(HttpPtl &ptl);
+    WebsocketParse_ErrorCode get_websocket_packet(WebsocketPtl &ptl);
+    
 private:
     ProtocolType protocol_type_;
     ProtocolParseState parse_state_;
