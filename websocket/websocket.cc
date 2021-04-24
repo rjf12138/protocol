@@ -77,6 +77,18 @@ WebsocketPtl::check_end()
     return un.c;
 }
 
+string 
+WebsocketPtl::generate_sec_websocket_key(void)
+{
+
+}
+
+bool
+WebsocketPtl::check_sec_websocket_accept(string str)
+{
+
+}
+
 WebsocketParse_ErrorCode 
 WebsocketPtl::parse(ByteBuffer &buff)
 {
@@ -144,6 +156,19 @@ WebsocketPtl::parse(ByteBuffer &buff)
     return WebsocketParse_OK;
 }
 
+string 
+WebsocketPtl::get_upgrade_packet(string host, string url)
+{
+    HttpPtl ptl;
+    
+    ptl.set_request(HTTP_METHOD_GET, url);
+    ptl.set_header_option(HTTP_HEADER_Host, host);
+    ptl.set_header_option(HTTP_HEADER_Upgrade, "websocket");
+    ptl.set_header_option(HTTP_HEADER_Connection, "Upgrade");
+
+
+}
+
 Int32 
 WebsocketPtl::generate(ByteBuffer &out, ByteBuffer &content, Int8 nOpcode, bool bMask)
 {
@@ -200,8 +225,7 @@ WebsocketPtl::generate(ByteBuffer &out, ByteBuffer &content, Int8 nOpcode, bool 
 Int32
 WebsocketPtl::get_content(ByteBuffer &out)
 {
-    if (fin_ == 1)
-    {
+    if (fin_ == 1) {
         out = data_;
         return out.data_size();
     }
@@ -210,7 +234,7 @@ WebsocketPtl::get_content(ByteBuffer &out)
 }
 
 ENUM_WEBSOCKET_OPCODE 
-WebsocketPtl::get_op_code(void)
+WebsocketPtl::get_opcode(void)
 {
     if (fin_ == 1) { // 只有在该帧为末尾时才返回
         return opcode_;

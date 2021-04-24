@@ -16,9 +16,6 @@ enum ProtocolParseState {
 };
 
 namespace my_protocol {
-int encode_base64(char *inbuf, int inlen, char *outbuf, int outlen);
-int decode_base64(char* inbuf, int inlen, char* outbuf, int outlen);
-
 class ProtocolParser {
 public:
     ProtocolParser(void);

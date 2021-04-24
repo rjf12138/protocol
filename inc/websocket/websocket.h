@@ -2,7 +2,7 @@
 #define __WEBSOCKET_H__
 
 #include "basic_head.h"
-#include "buffer/byte_buffer.h"
+#include "http/http.h"
 
 namespace my_protocol {
     
@@ -34,10 +34,13 @@ public:
     WebsocketParse_ErrorCode parse(ByteBuffer &buff);
     Int32 generate(ByteBuffer &out, ByteBuffer &content, Int8 nOpcode, bool bMask = false);
 
+    // 客户端请求将链接升级为 websocket 的 http 请求包
+    string get_upgrade_packet(string host = "websocket server", string url = "/");
+
     // 获取消息内容
     Int32 get_content(ByteBuffer &out);
     // 获取opcode
-    ENUM_WEBSOCKET_OPCODE get_op_code(void);
+    ENUM_WEBSOCKET_OPCODE get_opcode(void);
 
     // 64位整型大小端转换
     UInt64 ntohll(UInt64 val);
@@ -47,9 +50,14 @@ public:
     Int32 check_end(void);
     // 打印成16进制
     Int32 print_hex(Int8 val);
- 
+
+private:
+    string generate_sec_websocket_key(void);
+    bool check_sec_websocket_accept(string str);
+    
 private:
     Int8 fin_;
+    string websocket_accept;
     ENUM_WEBSOCKET_OPCODE opcode_;
 
     ByteBuffer data_;
