@@ -27,6 +27,8 @@ public:
     HttpParse_ErrorCode parser(ByteBuffer &data);
     int generate(ByteBuffer &data);
 
+    int clear();
+
     // 设置http请求头
     int set_request(const string &method, const string &url);
     // 设置http回应头

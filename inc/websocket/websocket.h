@@ -35,7 +35,9 @@ public:
     Int32 generate(ByteBuffer &out, ByteBuffer &content, Int8 nOpcode, bool bMask = false);
 
     // 客户端请求将链接升级为 websocket 的 http 请求包
-    string get_upgrade_packet(string host = "websocket server", string url = "/");
+    int get_upgrade_packet(HttpPtl &request, ByteBuffer &content, string url = "/", string host = "websocket client");
+    // 服务端回复客户端的请求
+    int response_upgrade_packet(HttpPtl &request, HttpPtl &response, ByteBuffer &content, string host = "websocket server");
 
     // 获取消息内容
     Int32 get_content(ByteBuffer &out);
@@ -52,12 +54,11 @@ public:
     Int32 print_hex(Int8 val);
 
 private:
-    string generate_sec_websocket_key(void);
-    bool check_sec_websocket_accept(string str);
-    
+    int generate_sec_websocket_key(ByteBuffer &out);
+    int generate_sec_websocket_accept(ByteBuffer &sec_key);
 private:
     Int8 fin_;
-    string websocket_accept;
+    ByteBuffer sec_websocket_accept_;
     ENUM_WEBSOCKET_OPCODE opcode_;
 
     ByteBuffer data_;

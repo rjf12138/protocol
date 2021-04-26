@@ -248,6 +248,16 @@ HttpPtl::generate(ByteBuffer &data)
 }
 
 int 
+HttpPtl::clear()
+{
+    content_.clear();
+    url_ = "";
+    method_ = "";
+    phrase_ = "";
+    header_.clear();
+}
+
+int 
 HttpPtl::set_content(ByteBuffer &data)
 {
     content_ = data;

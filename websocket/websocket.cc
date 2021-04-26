@@ -1,4 +1,6 @@
 #include "websocket.h"
+#include "data_structure/base64.h"
+#include "data_structure/sha1.h"
 
 namespace my_protocol {
 
@@ -77,16 +79,31 @@ WebsocketPtl::check_end()
     return un.c;
 }
 
-string 
-WebsocketPtl::generate_sec_websocket_key(void)
+int 
+WebsocketPtl::generate_sec_websocket_key(ByteBuffer &out)
 {
+    ByteBuffer buffer;
+    for (int i = 0; i < 16; ++i) {
+        buffer.write_int8(rand() % 256);
+    }
+    out.clear();
+    encode_base64(buffer, out);  // 生成发送的sec-key
 
+    buffer = out;
+    this->generate_sec_websocket_accept(buffer);
+
+    return 0;
 }
 
-bool
-WebsocketPtl::check_sec_websocket_accept(string str)
+int 
+WebsocketPtl::generate_sec_websocket_accept(ByteBuffer &sec_key)
 {
+    // 生成 accept-key 用于检查服务端返回
+    sec_websocket_accept_.clear();
+    sec_key.write_string("258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+    sha1(sec_key, sec_websocket_accept_);
 
+    return 0;
 }
 
 WebsocketParse_ErrorCode 
@@ -156,17 +173,55 @@ WebsocketPtl::parse(ByteBuffer &buff)
     return WebsocketParse_OK;
 }
 
-string 
-WebsocketPtl::get_upgrade_packet(string host, string url)
+int 
+WebsocketPtl::get_upgrade_packet(HttpPtl &request, ByteBuffer &content, string url, string host)
 {
-    HttpPtl ptl;
-    
-    ptl.set_request(HTTP_METHOD_GET, url);
-    ptl.set_header_option(HTTP_HEADER_Host, host);
-    ptl.set_header_option(HTTP_HEADER_Upgrade, "websocket");
-    ptl.set_header_option(HTTP_HEADER_Connection, "Upgrade");
+    request.clear();
+    request.set_request(HTTP_METHOD_GET, url);
+    request.set_header_option(HTTP_HEADER_Host, host);
+    request.set_header_option(HTTP_HEADER_Upgrade, "websocket");
+    request.set_header_option(HTTP_HEADER_Connection, "Upgrade");
+    request.set_header_option(HTTP_HEADER_SecWebSocketVersion, "13");
 
+    ByteBuffer buffer;
+    this->generate_sec_websocket_key(buffer);
+    request.set_header_option(HTTP_HEADER_SecWebSocketKey, buffer.str());
+    request.set_content(content);
 
+    return 0;
+}
+
+int 
+WebsocketPtl::response_upgrade_packet(HttpPtl &request, HttpPtl &response, ByteBuffer &content, string host)
+{
+    if (request.get_method() != HTTP_METHOD_GET) {
+        return -1;
+    }
+
+    if (request.get_header_option(HTTP_HEADER_Upgrade) == "websocket") {
+        return -1;
+    }
+
+    if (request.get_header_option(HTTP_HEADER_Connection) == "Upgrade") {
+        return -1;
+    }
+
+    if (request.get_header_option(HTTP_HEADER_SecWebSocketVersion) == "13") {
+        return -1;
+    }
+
+    ByteBuffer buffer;
+    buffer.write_string(request.get_header_option(HTTP_HEADER_SecWebSocketKey));
+    this->generate_sec_websocket_accept(buffer);
+
+    response.clear();
+    response.set_response(101, "Switching Protocols");
+    response.set_header_option(HTTP_HEADER_Connection, "Upgrade");
+    response.set_header_option(HTTP_HEADER_SecWebSocketVersion, "13");
+    response.set_header_option(HTTP_HEADER_SecWebSocketAccept, sec_websocket_accept_.str());
+    response.set_content(content);
+
+    return 0;
 }
 
 Int32 

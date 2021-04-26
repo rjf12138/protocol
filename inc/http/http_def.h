@@ -94,5 +94,9 @@
 #define HTTP_HEADER_Expires		        "Expires"               //实体主体过期的日期时间
 #define HTTP_HEADER_LastModified	    "Last-Modified"	        //资源的最后修改日期时间
 
+/// 扩展字段
+#define HTTP_HEADER_SecWebSocketKey     "Sec-WebSocket-Key"
+#define HTTP_HEADER_SecWebSocketVersion "Sec-WebSocket-Version"
+#define HTTP_HEADER_SecWebSocketAccept  "Sec-WebSocket-Accept"
 
 #endif
