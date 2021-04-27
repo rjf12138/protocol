@@ -116,6 +116,9 @@ WebsocketPtl::parse(ByteBuffer &buff)
     UInt64 len = buff.data_size();
     if (len >= 1) {
         fin_ = (unsigned char)buff[msg_pos] >> 7;
+        if ((buff[msg_pos] & 0x70) != 0x0) { // 该实现不支持扩展，所以RSV1, RSV2, RSV3必须是0，否则关闭返回错误关闭连接
+            return WebsocketParse_ParseFailed;
+        }
         opcode_ = static_cast<ENUM_WEBSOCKET_OPCODE>(buff[msg_pos] & 0x0f);
         msg_pos++;
     } else {
@@ -170,6 +173,8 @@ WebsocketPtl::parse(ByteBuffer &buff)
     } else {
         return WebsocketParse_PacketNotEnough;
     }
+
+    buff.update_read_pos(msg_pos);
     return WebsocketParse_OK;
 }
 

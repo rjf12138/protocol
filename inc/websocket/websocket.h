@@ -11,7 +11,8 @@ using namespace my_utils;
 enum WebsocketParse_ErrorCode {
     WebsocketParse_OK = 0,
     WebsocketParse_PacketNotEnough = -1,
-    WebsocketParse_NotSupportWebsocket = -2
+    WebsocketParse_ParseFailed = -2,
+    WebsocketParse_NotSupportWebsocket = -3
 };
 
 enum ENUM_WEBSOCKET_OPCODE {
