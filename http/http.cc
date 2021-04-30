@@ -255,6 +255,8 @@ HttpPtl::clear()
     method_ = "";
     phrase_ = "";
     header_.clear();
+
+    return 0;
 }
 
 int 
