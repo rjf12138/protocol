@@ -324,6 +324,9 @@ public:
     // 返回元素数量
     int size(void);
     
+    // 清空所有元素
+    int clear(void);
+
     VALUE_TYPE get_type(void) const {return json_value_type_;}
     
     // 只有Json的数组或对象类型支持

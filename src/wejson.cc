@@ -1440,6 +1440,16 @@ ValueTypeCast::size(void)
     return 1; // 其他的类型下面子元素只有一个
 }
 
+int 
+ValueTypeCast::clear(void)
+{
+    json_value_type_ = JSON_UNKNOWN_TYPE;
+    json_array_value_.array_val_.clear();
+    json_object_value_.object_val_.clear();
+
+    return 0;
+}
+
 JsonIter 
 ValueTypeCast::begin(void)
 {

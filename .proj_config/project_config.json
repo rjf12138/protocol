@@ -7,8 +7,7 @@
 		"gtest_main",
 		"buffer",
 		"pthread",
-		"message",
-		"system_util"
+		"message"
 	],
 	"release版编译选项":"#-O2 -Wall -std=c++11",
 	"release静态库列表":[
@@ -23,13 +22,11 @@
 		"./inc/"
 	],
 	"当前生成文件类型":"exe",
-	"当前程序入口文件":"http_test.cc",
+	"当前程序入口文件":"WeJson_Test.cc",
 	"当前编译器":"g++",
 	"源文件目录列表":[
 		"./src/",
-		"./main/",
-		"./json/",
-		"./http/"
+		"./main/"
 	],
 	"程序入口文件列表":[
 		"http_test.cc",
