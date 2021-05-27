@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../../output/debug/lib/libprotocol.a  CMakeFiles/protocol.dir/http.cc.o CMakeFiles/protocol.dir/protocol.cc.o CMakeFiles/protocol.dir/websocket.cc.o CMakeFiles/protocol.dir/wejson.cc.o
+/usr/bin/ranlib ../../output/debug/lib/libprotocol.a
