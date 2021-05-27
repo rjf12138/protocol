@@ -1,8 +1,0 @@
-/home/ruanjian/workspace/project_pre/protocol/build/CMakeFiles/rebuild_cache.dir
-/home/ruanjian/workspace/project_pre/protocol/build/CMakeFiles/edit_cache.dir
-/home/ruanjian/workspace/project_pre/protocol/build/src/CMakeFiles/rebuild_cache.dir
-/home/ruanjian/workspace/project_pre/protocol/build/src/CMakeFiles/edit_cache.dir
-/home/ruanjian/workspace/project_pre/protocol/build/src/CMakeFiles/protocol.dir
-/home/ruanjian/workspace/project_pre/protocol/build/main/CMakeFiles/rebuild_cache.dir
-/home/ruanjian/workspace/project_pre/protocol/build/main/CMakeFiles/edit_cache.dir
-/home/ruanjian/workspace/project_pre/protocol/build/main/CMakeFiles/WeJson_Test.dir
