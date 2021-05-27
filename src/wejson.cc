@@ -735,7 +735,7 @@ JsonObject::parse(ByteBuffer_Iterator &value_start_pos, ByteBuffer_Iterator &jso
         if (object_val_.find(value_name) == object_val_.end()) {
             object_val_[value_name] = vtc;
         } else {
-            throw runtime_error(GET_MSG("There's already \"%s\" exists."));
+            throw runtime_error(GET_MSG("There's already \"%s\" exists.", value_name.c_str()));
         }
         flag = false;
         if (*iter == '}') { // 有些解析完就直接指向'}'， 如果不退出在回到循环会因值自增错过
