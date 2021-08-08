@@ -1,6 +1,6 @@
 #include "protocol.h"
 
-namespace my_protocol {
+namespace protocol {
 
 ProtocolParser::ProtocolParser(void)
     : protocol_type_(ProtocolType_Raw),
@@ -40,7 +40,7 @@ ProtocolParser::get_protocol_type(void) const
     return protocol_type_;
 }
 
-ByteBuffer& 
+basic::ByteBuffer& 
 ProtocolParser::get_protocol_buff(void)
 {
     return data_;

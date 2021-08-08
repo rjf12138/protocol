@@ -27,5 +27,7 @@ target_link_directories(protocol PRIVATE ./lib/debug/)
 
 target_link_libraries(protocol PRIVATE basicd)
 target_link_libraries(protocol PRIVATE algorithmd)
+target_link_libraries(protocol PRIVATE gtest)
+target_link_libraries(protocol PRIVATE pthread)
 include(src/CMakeLists.txt)
 

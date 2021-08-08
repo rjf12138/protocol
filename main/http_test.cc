@@ -158,9 +158,11 @@ TEST_F(Http_Test, Loop_Test)
 
     HttpPtl ptl1, ptl2;
     basic::ByteBuffer content("Hello, world!"), ptl_stream;
-
-    int count_1 = 250, count_2 = 90;
+    int64_t count = 0;
+    int count_1 = 10, count_2 = 90;
     for (int k = 0; k < count_1; ++k) {
+        std::cout << "count: " << count <<std::endl;
+        time_t start = time(NULL);
         for (int s = 0; s < count_2; ++s) {
             for (std::size_t j = 0; j < head_method.size(); ++j) {
                 ptl1.set_request(head_method[j], head_url[0]);
@@ -176,7 +178,8 @@ TEST_F(Http_Test, Loop_Test)
                 ptl_stream += tmp_buf;
             }
         }
-
+        std::cout << "gap1: " << time(NULL) - start << std::endl;
+        start = time(NULL);
         for (int s = 0; s < count_2; ++s) {
             for (std::size_t j = 0; j < head_method.size(); ++j) {
                 ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
@@ -188,9 +191,11 @@ TEST_F(Http_Test, Loop_Test)
                 for (std::size_t i = 0; i < head_option.size(); ++i) {
                     ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
                 }
+                count++;
             }
         }
-
+        std::cout << "gap2: " << time(NULL) - start << std::endl;
+        start = time(NULL);
         for (int s = 0; s < count_2; ++s) {
             for (std::size_t j = 0; j < head_code.size(); ++j) {
                 ptl1.set_response(head_code[j], head_phrase[0]);
@@ -206,7 +211,8 @@ TEST_F(Http_Test, Loop_Test)
                 ptl_stream += tmp_buf;
             }
         }
-
+        std::cout << "gap3: " << time(NULL) - start << std::endl;
+        start = time(NULL);
         for (int s = 0; s < count_2; ++s) {
             for (std::size_t j = 0; j < head_code.size(); ++j) {
                 ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
@@ -218,9 +224,10 @@ TEST_F(Http_Test, Loop_Test)
                 for (std::size_t i = 0; i < head_option.size(); ++i) {
                     ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
                 }
+                count++;
             }
         }
-
+        std::cout << "gap4: " << time(NULL) - start << std::endl;
     }
 }
 

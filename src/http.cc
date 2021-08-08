@@ -1,3 +1,4 @@
+#include "algorithm/algorithm.h"
 #include "http.h"
 
 namespace protocol {
@@ -86,13 +87,13 @@ HttpPtl::parser(basic::ByteBuffer &data)
 
 __HTTP_HEAD__:
     data.update_read_pos(iter - start_pos_iter); // 更新basic::ByteBuffer读位置到http协议开始的位置
-    basic::ByteBuffer_Iterator http_begin_iter = data.begin();
+    basic::ByteBuffer::iterator http_begin_iter = data.begin();
 
-    ostringstream ostr;
+    std::ostringstream ostr;
     ssize_t body_length = 0;
 
-    vector<basic::ByteBuffer_Iterator> http_length_pos = data.find(basic::ByteBuffer(HTTP_HEADER_ContentLength));
-    vector<basic::ByteBuffer_Iterator> http_body_pos = data.find(basic::ByteBuffer("\r\n\r\n"));
+    std::vector<basic::ByteBuffer::iterator> http_length_pos = data.find(basic::ByteBuffer(HTTP_HEADER_ContentLength));
+    std::vector<basic::ByteBuffer::iterator> http_body_pos = data.find(basic::ByteBuffer("\r\n\r\n"));
 
     if (http_body_pos.size() <= 0 ) { // 找不到报文主体开始的位置
         return HttpParse_CantFindBody;
@@ -101,12 +102,12 @@ __HTTP_HEAD__:
     if (http_length_pos.size() <= 0) {
         body_length = 0;
     } else {
-        basic::ByteBuffer_Iterator header_value_start_iter = http_length_pos[0] + strlen(HTTP_HEADER_ContentLength); // 获取报文主体的长度
+        basic::ByteBuffer::iterator header_value_start_iter = http_length_pos[0] + strlen(HTTP_HEADER_ContentLength); // 获取报文主体的长度
         for (; header_value_start_iter != data.end(); ++header_value_start_iter) {
             if (*header_value_start_iter == ':' || *header_value_start_iter == ' ') {
                 continue;
             } else if (*header_value_start_iter == '\r' && *(header_value_start_iter+1) == '\n') {
-                body_length =  stoll(ostr.str());
+                body_length =  std::stoll(ostr.str());
                 break;
             } else {
                 ostr << *header_value_start_iter;
@@ -114,8 +115,8 @@ __HTTP_HEAD__:
         }
     }
 
-    basic::ByteBuffer_Iterator body_start_iter = http_body_pos[0] + 4; // 跳过分割符 \r\n\r\n
-    basic::ByteBuffer_Iterator last_pos = data.last_data();
+    basic::ByteBuffer::iterator body_start_iter = http_body_pos[0] + 4; // 跳过分割符 \r\n\r\n
+    basic::ByteBuffer::iterator last_pos = data.last_data();
     if (last_pos - body_start_iter + 1 < body_length) {
         return HttpParse_ContentNotEnough; // 缓存中的报文主体不够
     } else {
@@ -124,7 +125,7 @@ __HTTP_HEAD__:
 
     basic::ByteBuffer http_headers;
     data.get_data(http_headers, http_begin_iter, http_body_pos[0] - http_begin_iter); // 获取报文首部
-    vector<basic::ByteBuffer> headers = http_headers.split(basic::ByteBuffer("\r\n")); // 分割报文首部
+    std::vector<basic::ByteBuffer> headers = http_headers.split(basic::ByteBuffer("\r\n")); // 分割报文首部
 
     // 解析报文请求行
     bool flag = false;
@@ -142,7 +143,7 @@ __HTTP_HEAD__:
             ++http_request_iter;
         } else if ((*http_request_iter == ' ' && flag == true)) {
             if (method_ == HTTP_METHOD_RESPONE) {
-                code_ = stoll(ostr.str());
+                code_ = std::stoll(ostr.str());
             } else {
                 url_ = ostr.str();
             }
@@ -268,7 +269,7 @@ HttpPtl::set_content(basic::ByteBuffer &data)
 }
 
 int 
-HttpPtl::set_request(const string &method, const string &url)
+HttpPtl::set_request(const std::string &method, const std::string &url)
 {
     method_ = method;
     url_ = url;
@@ -278,7 +279,7 @@ HttpPtl::set_request(const string &method, const string &url)
 }
 
 int 
-HttpPtl::set_response(int code, const string &phrase)
+HttpPtl::set_response(int code, const std::string &phrase)
 {
     code_ = code;
     phrase_ = phrase;
@@ -288,14 +289,14 @@ HttpPtl::set_response(int code, const string &phrase)
 }
 
 int 
-HttpPtl::set_phrase(string phrase)
+HttpPtl::set_phrase(std::string phrase)
 {
     phrase_ = phrase;
     return 0;
 }
 
 int 
-HttpPtl::set_header_option(const string &key, const string &value)
+HttpPtl::set_header_option(const std::string &key, const std::string &value)
 {
     header_[key] = value;
 
@@ -308,14 +309,14 @@ HttpPtl::get_status_code(void)
     return code_;
 }
 
-string 
+std::string 
 HttpPtl::get_method(void)
 {
     return method_;
 }
 
-string 
-HttpPtl::get_header_option(const string &key)
+std::string 
+HttpPtl::get_header_option(const std::string &key)
 {
     return header_[key];
 }

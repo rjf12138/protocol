@@ -1,9 +1,9 @@
 #ifndef __HTTP_H_
 #define __HTTP_H_
 
+#include "http_def.h"
 #include "basic/basic_head.h"
 #include "basic/byte_buffer.h"
-#include "http_def.h"
 
 namespace protocol {
 

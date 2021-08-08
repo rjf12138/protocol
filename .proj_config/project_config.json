@@ -30,7 +30,9 @@
 	"LibraryListing": {
 		"debug": [
 			"basicd",
-			"algorithmd"
+			"algorithmd",
+			"gtest",
+			"pthread"
 		],"release": [
 			
 		]
