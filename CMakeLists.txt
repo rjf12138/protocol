@@ -18,7 +18,7 @@ target_compile_options(protocol_compiler_flags INTERFACE
 
 # 设置生成文件输出路径
 set(EXECUTABLE_OUTPUT_PATH, ./output/debug/bin)
-add_executable(protocol ./main/http_test.cc)
+add_executable(protocol ./main/websocket_test.cc)
 
 target_include_directories(protocol PUBLIC ./inc/)
 target_include_directories(protocol PRIVATE ./extern_inc/)

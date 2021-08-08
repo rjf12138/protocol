@@ -23,6 +23,15 @@ WebsocketPtl::print_hex(int8_t val)
     return 0;
 }
 
+void 
+WebsocketPtl::clear(void)
+{
+    fin_ = 0;
+    sec_websocket_accept_.clear();
+    data_.clear();
+    opcode_ = WEBSOCKET_OPCODE_UNKNOWN;
+}
+
 uint64_t 
 WebsocketPtl::ntohll(uint64_t host)
 {
@@ -149,22 +158,26 @@ WebsocketPtl::parse(basic::ByteBuffer &buff)
     }
 
     if (mask == 1 && len >= msg_pos + 4) {
-        for (int32_t i = 0; i < 4; i++) {
+        std::cout << "Mask: ";
+        for (int32_t i = 0; i < 4; ++i) {
             masking_key[i] = buff[msg_pos + i];
+            std::cout << (char)masking_key[i] << " ";
         }
+        std::cout << std::endl;
         msg_pos += 4;
     } else if (mask == 0) {
     } else {
         return WebsocketParse_PacketNotEnough;
     }
-
+    std::cout << "payload_length: " << payload_length << std::endl; 
     if (len >= msg_pos + payload_length) {
         data_.clear();
         if (mask != 1) {
             auto copy_start_iter = buff.begin() + msg_pos;
             buff.get_data(data_, copy_start_iter, payload_length);
         } else {
-            for (uint64_t i = 0; i < payload_length; i++) {
+            for (uint64_t i = 0; i < payload_length; ++i) {
+                std::cout << "parser: [" << i << "]： " << (char)(buff[msg_pos + i] ^ masking_key[i % 4]) << std::endl; 
                 data_.write_int8(buff[msg_pos + i] ^ masking_key[i % 4]);
             }
         }
@@ -172,7 +185,7 @@ WebsocketPtl::parse(basic::ByteBuffer &buff)
     } else {
         return WebsocketParse_PacketNotEnough;
     }
-
+    std::cout << "data_size: " << data_.data_size() << std::endl; 
     buff.update_read_pos(msg_pos);
     return WebsocketParse_OK;
 }
@@ -271,7 +284,14 @@ WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_
         uint32_t rand_num = rand();
         out.write_int32(rand_num);
 
-        for (unsigned i = 0; i < len; i++) {
+        std::cout << "Mask: ";
+        for (int i = 0; i < 4; ++i) {
+            std::cout << (int32_t)(&rand_num)[i] << " ";
+        }
+        std::cout << std::endl;
+
+        for (unsigned i = 0; i < len; ++i) {
+            std::cout << "generate: [" << i << "]： " << content[i] << std::endl; 
             out.write_int8(content[i] ^ (&rand_num)[i % 4]);
         }
     } else {
@@ -281,15 +301,10 @@ WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_
     return out.data_size();
 }
 
-int32_t
-WebsocketPtl::get_content(basic::ByteBuffer &out)
-{
-    if (fin_ == 1) {
-        out = data_;
-        return out.data_size();
-    }
-    
-    return 0;
+basic::ByteBuffer &
+WebsocketPtl::get_content(void)
+{   
+    return data_;
 }
 
 ENUM_WEBSOCKET_OPCODE 
