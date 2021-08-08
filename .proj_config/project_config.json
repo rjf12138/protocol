@@ -1,7 +1,8 @@
 {
 	"AssociatedProject": [
 		"gtest",
-		"basic"
+		"basic",
+		"algorithm"
 	],"ChooseCompiler": [
 		{
 			"CompilerName": "g++",
@@ -28,13 +29,13 @@
 	},
 	"LibraryListing": {
 		"debug": [
-			
-		],
-		"release": [
+			"basicd",
+			"algorithmd"
+		],"release": [
 			
 		]
 	},
-	"MainFileName": "",
+	"MainFileName": "http_test.cc",
 	"Name": "protocol",
 	"Path": "/home/ruanjian/workspace/project_v/protocol",
 	"ProgramRunArgs": "",
