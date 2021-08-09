@@ -57,7 +57,6 @@ TEST_F(WebsocketPtl_Test, Parser_Test)
             ASSERT_EQ(i, websck_ptl.get_opcode());
 
             basic::ByteBuffer &content1 = websck_ptl.get_content();
-            std::cout << "buffer_size: " << buffer.data_size() << std::endl;
             ASSERT_EQ(count, content1.data_size());
             if (content1 != buffer) {
                 int k = 0;

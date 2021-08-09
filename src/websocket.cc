@@ -128,7 +128,7 @@ WebsocketPtl::parse(basic::ByteBuffer &buff)
             return WebsocketParse_ParseFailed;
         }
         opcode_ = static_cast<ENUM_WEBSOCKET_OPCODE>(buff[msg_pos] & 0x0f);
-        msg_pos++;
+        ++msg_pos;
     } else {
         return WebsocketParse_PacketNotEnough;
     }
@@ -156,20 +156,17 @@ WebsocketPtl::parse(basic::ByteBuffer &buff)
     } else {
         return WebsocketParse_PacketNotEnough;
     }
-
+    
     if (mask == 1 && len >= msg_pos + 4) {
-        std::cout << "Mask: ";
         for (int32_t i = 0; i < 4; ++i) {
             masking_key[i] = buff[msg_pos + i];
-            std::cout << (char)masking_key[i] << " ";
         }
-        std::cout << std::endl;
         msg_pos += 4;
     } else if (mask == 0) {
     } else {
         return WebsocketParse_PacketNotEnough;
     }
-    std::cout << "payload_length: " << payload_length << std::endl; 
+    
     if (len >= msg_pos + payload_length) {
         data_.clear();
         if (mask != 1) {
@@ -177,7 +174,6 @@ WebsocketPtl::parse(basic::ByteBuffer &buff)
             buff.get_data(data_, copy_start_iter, payload_length);
         } else {
             for (uint64_t i = 0; i < payload_length; ++i) {
-                std::cout << "parser: [" << i << "]： " << (char)(buff[msg_pos + i] ^ masking_key[i % 4]) << std::endl; 
                 data_.write_int8(buff[msg_pos + i] ^ masking_key[i % 4]);
             }
         }
@@ -185,8 +181,8 @@ WebsocketPtl::parse(basic::ByteBuffer &buff)
     } else {
         return WebsocketParse_PacketNotEnough;
     }
-    std::cout << "data_size: " << data_.data_size() << std::endl; 
     buff.update_read_pos(msg_pos);
+
     return WebsocketParse_OK;
 }
 
@@ -279,25 +275,19 @@ WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_
         start_pos += 8;
     }
 
-    if (bMask) {
-        srand(time(NULL));
-        uint32_t rand_num = rand();
-        out.write_int32(rand_num);
+    if (bMask == true) {
+        int32_t mask_num = static_cast<int32_t>(time(NULL));
 
-        std::cout << "Mask: ";
-        for (int i = 0; i < 4; ++i) {
-            std::cout << (int32_t)(&rand_num)[i] << " ";
-        }
-        std::cout << std::endl;
+        out.write_int32(mask_num);
+        char *mask_ch = (char*)&mask_num; // 直接对mask_num取指针用下标访问有问题
 
         for (unsigned i = 0; i < len; ++i) {
-            std::cout << "generate: [" << i << "]： " << content[i] << std::endl; 
-            out.write_int8(content[i] ^ (&rand_num)[i % 4]);
+            out.write_int8(content[i] ^ mask_ch[i % 4]);
         }
     } else {
         out += content;
     }
-    
+
     return out.data_size();
 }
 
