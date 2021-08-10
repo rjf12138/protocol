@@ -26,7 +26,7 @@ TEST_F(WebsocketPtl_Test, Parser_Test)
     basic::ByteBuffer buffer, output_ptl;
     WebsocketPtl websck_ptl;
 
-    std::vector<int> sizes = {0, 100, 254, 65533, 655330};
+    std::vector<int> sizes = {0, 100, 254, 65533, 6553300};
 
     for (std::size_t count = 0; count < sizes.size(); ++count) {
         buffer.clear();
@@ -63,6 +63,36 @@ TEST_F(WebsocketPtl_Test, Parser_Test)
             }
             ASSERT_EQ(content1, buffer);
         }
+    }
+}
+
+TEST_F(WebsocketPtl_Test, Loop_test)
+{
+    basic::ByteBuffer buffer, output_ptl, msg_buffer;
+    WebsocketPtl websck_ptl;
+
+    std::vector<int> sizes = {0, 1, 50, 100, 254, 65533, 6553300};
+    std::vector<char> content = {'z', 'a', 'b','c','d','e','f'};
+
+    for (std::size_t j = 0; j < sizes.size(); ++j) {
+        buffer.clear();
+        for (int i = 0; i < sizes[j]; ++i) {
+            buffer.write_int8(content[j]);
+        }
+
+        websck_ptl.generate(output_ptl, buffer, WEBSOCKET_OPCODE_TEXT_FRAME, false);
+        msg_buffer += output_ptl;
+    }
+
+    for (int i = 0; i <sizes.size(); ++i)
+    {
+        WebsocketParse_ErrorCode errcode = websck_ptl.parse(msg_buffer);
+        ASSERT_EQ(errcode, WebsocketParse_OK);
+        std::cout << "size: " << websck_ptl.get_content().data_size() << std::endl;
+        // ASSERT_EQ(websck_ptl.get_content().data_size(), sizes[i]);
+        // for (int j = 0; j < websck_ptl.get_content().data_size(); ++j) {
+        //     ASSERT_EQ(websck_ptl.get_content()[j], content[i]);
+        // }
     }
 }
 
