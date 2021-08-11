@@ -135,7 +135,7 @@ WebsocketPtl::parse(basic::ByteBuffer &buff)
 
     if (len >= 2) {
         mask = (uint8_t)buff[msg_pos] >> 7;
-        payload_length = buff[msg_pos] & 0x7f;
+        payload_length = buff[msg_pos] & 0x7F;
         msg_pos++;
     } else {
         return WebsocketParse_PacketNotEnough;
@@ -257,10 +257,10 @@ WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_
     }
 
     if (len >= 0 && len < 126) {
-        cbyte |= len & 0x7;
+        cbyte |= len & 0x7F;
         out.write_int8(cbyte);
         start_pos++;
-    } else if (len >= 126 && len <= 0xFFFF) {
+    } else if (len >= 126 && len < 0xFFFF) {
         cbyte |= 126;
         out.write_int8(cbyte);
         start_pos++;
@@ -270,11 +270,11 @@ WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_
         cbyte |= 127;
         out.write_int8(cbyte);
         start_pos++;
-        uint64_t uLength = this->htonll(len) & 0x7FFFFFFFFFFFFFFF;
+        uint64_t uLength = this->htonll(len & 0x7FFFFFFFFFFFFFFF);
         out.write_int64(uLength);
         start_pos += 8;
     }
-
+    
     if (bMask == true) {
         int32_t mask_num = static_cast<int32_t>(time(NULL));
 
