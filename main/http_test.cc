@@ -1,7 +1,7 @@
 #include "protocol.h"
 #include "gtest/gtest.h"
 
-using namespace protocol;
+using namespace ptl;
 
 namespace my {
 namespace project {

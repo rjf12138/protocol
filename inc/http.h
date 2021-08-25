@@ -5,7 +5,7 @@
 #include "basic/basic_head.h"
 #include "basic/byte_buffer.h"
 
-namespace protocol {
+namespace ptl {
 
 enum HttpParse_ErrorCode {
     HttpParse_OK = 0,

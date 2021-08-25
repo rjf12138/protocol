@@ -1,7 +1,7 @@
 #include "algorithm/algorithm.h"
 #include "websocket.h"
 
-namespace protocol {
+namespace ptl {
 
 WebsocketPtl::WebsocketPtl(void)
 {

@@ -1,7 +1,7 @@
 #include "algorithm/algorithm.h"
 #include "http.h"
 
-namespace protocol {
+namespace ptl {
 
 HttpPtl::HttpPtl(void)
 {

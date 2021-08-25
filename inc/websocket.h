@@ -3,7 +3,7 @@
 
 #include "http.h"
 
-namespace protocol {
+namespace ptl {
 
 enum WebsocketParse_ErrorCode {
     WebsocketParse_OK = 0,
