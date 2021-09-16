@@ -261,7 +261,7 @@ HttpPtl::clear()
 }
 
 int 
-HttpPtl::set_content(basic::ByteBuffer &data)
+HttpPtl::set_content(const basic::ByteBuffer &data)
 {
     content_ = data;
 
@@ -289,7 +289,7 @@ HttpPtl::set_response(int code, const std::string &phrase)
 }
 
 int 
-HttpPtl::set_phrase(std::string phrase)
+HttpPtl::set_phrase(const std::string &phrase)
 {
     phrase_ = phrase;
     return 0;
