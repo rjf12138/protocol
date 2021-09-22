@@ -23,6 +23,7 @@ public:
     virtual ~HttpPtl(void);
 
     HttpParse_ErrorCode parser(basic::ByteBuffer &data);
+    HttpParse_ErrorCode parse(basic::ByteBuffer &data);
     int generate(basic::ByteBuffer &data);
 
     int clear();
