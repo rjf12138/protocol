@@ -228,6 +228,10 @@ enum HttpParseState {
 HttpParse_ErrorCode 
 HttpPtl::parse(basic::ByteBuffer &data)
 {
+    if (data.data_size() <= 14) {
+        return HttpParse_ContentNotEnough;
+    }
+
     ssize_t content_len = -1;
     std::string key, value;
     auto iter = data.begin();
@@ -244,7 +248,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                         basic::ByteBuffer patten(HTTP_METHOD_GET);
                         if (data.bytecmp(iter, patten)) {
                             method_ = HTTP_METHOD_GET;
-                            data.update_read_pos(patten.data_size());
+                            iter += patten.data_size();
                             state = HttpParseState_UrlOrRetCode;
                         }
                     } break;
@@ -253,7 +257,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                         basic::ByteBuffer patten(HTTP_METHOD_PUT);
                         if (data.bytecmp(iter, patten)) {
                             method_ = HTTP_METHOD_PUT;
-                            data.update_read_pos(patten.data_size());
+                            iter += patten.data_size();
                             state = HttpParseState_UrlOrRetCode;
                         }
 
@@ -261,7 +265,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                         patten.write_string(HTTP_METHOD_POST);
                         if (data.bytecmp(iter, patten)) {
                             method_ = HTTP_METHOD_POST;
-                            data.update_read_pos(patten.data_size());
+                            iter += patten.data_size();
                             state = HttpParseState_UrlOrRetCode;
                         }
                     } break;
@@ -270,7 +274,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                         basic::ByteBuffer patten(HTTP_METHOD_DELETE);
                         if (data.bytecmp(iter, patten)) {
                             method_ = HTTP_METHOD_DELETE;
-                            data.update_read_pos(patten.data_size());
+                            iter += patten.data_size();
                             state = HttpParseState_UrlOrRetCode;
                         }
                     } break;
@@ -279,7 +283,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                         basic::ByteBuffer patten(HTTP_METHOD_HEAD);
                         if (data.bytecmp(iter, patten)) {
                             method_ = HTTP_METHOD_HEAD;
-                            data.update_read_pos(patten.data_size());
+                            iter += patten.data_size();
                             state = HttpParseState_UrlOrRetCode;
                         }
 
@@ -287,7 +291,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                         patten.write_string(HTTP_METHOD_RESPONE);
                         if (data.bytecmp(iter, patten)) {
                             method_ = HTTP_METHOD_RESPONE;
-                            data.update_read_pos(patten.data_size());
+                            iter += patten.data_size();
                             state = HttpParseState_UrlOrRetCode;
 
                             is_request = false;
@@ -298,7 +302,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                         basic::ByteBuffer patten(HTTP_METHOD_OPTION);
                         if (data.bytecmp(iter, patten)) {
                             method_ = HTTP_METHOD_OPTION;
-                            data.update_read_pos(patten.data_size());
+                            iter += patten.data_size();
                             state = HttpParseState_UrlOrRetCode;
                         }
                     } break;
@@ -314,31 +318,42 @@ HttpPtl::parse(basic::ByteBuffer &data)
             } break;
             case HttpParseState_UrlOrRetCode:
             {
-                if (*iter == ' ') {
-                    ++iter;
-                    continue;
-                } else {
+                if (*iter != ' ') {
                     url_ += *iter;
-                    ++iter;
-                    if (*iter == ' ') {
-                        if (is_request == false) {
-                            code_ = std::stoi(url_);
+                }
+
+                ++iter;
+                if (iter == data.end()) {
+                    return HttpParse_ContentNotEnough;
+                }
+
+                if (*iter == ' ') {
+                    if (is_request == false) {
+                        code_ = std::stoi(url_);
+                    }
+                    state = HttpParseState_VersionOrPhrase;
+                    while (true) {
+                        if (*iter == ' ') {
+                            ++iter;
+                            if (iter == data.end()) {
+                                return HttpParse_ContentNotEnough;
+                            }
+                        } else {
+                            break;
                         }
-                        state = HttpParseState_VersionOrPhrase;
                     }
                 }
             } break;
             case HttpParseState_VersionOrPhrase:
             {
-                if (*iter == ' ') {
-                    ++iter;
-                    continue;
-                } else {
-                    phrase_ += *iter;
-                    if (*iter++ == '\r') {
-                        state = HttpParseState_HeadOptionKey;
-                        key = "";
-                    }
+                phrase_ += *iter++;
+                if (iter == data.end()) {
+                    return HttpParse_ContentNotEnough;
+                }
+
+                if (*iter == '\r') {
+                    state = HttpParseState_HeadOptionKey;
+                    key = "";
                 }
             } break;
             case HttpParseState_HeadOptionKey:
@@ -346,13 +361,16 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 if (*iter == '\r' || *iter == '\n') {
                     ++iter;
                     continue;
-                } else {
-                    if (*iter++ == ':') {
-                        state = HttpParseState_HeadOptionValue;
-                        value = "";
-                    } else {
-                        key += *iter++;
-                    }
+                } 
+
+                key += *iter++;
+                if (iter == data.end()) {
+                    return HttpParse_ContentNotEnough;
+                }
+
+                if (*iter++ == ':') {
+                    state = HttpParseState_HeadOptionValue;
+                    value = "";
                 }
             } break;
             case HttpParseState_HeadOptionValue:
@@ -360,14 +378,23 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 if (*iter == ' ') {
                     ++iter;
                     continue;
-                } else {
-                    value += *iter++;
-                    if (*iter == '\r') {
-                        if (*(iter + 2) == '\r') {
-                            state = HttpParseState_ContentBody;
-                        } else {
-                            state = HttpParseState_HeadOptionKey;
-                        }
+                } 
+                
+                value += *iter++;
+                if (iter == data.end() || iter + 2 == data.end()) {
+                    return HttpParse_ContentNotEnough;
+                }
+
+                if (*iter == '\r') {
+                    if (*(iter + 2) == '\r') {
+                        state = HttpParseState_ContentBody;
+                    } else {
+                        state = HttpParseState_HeadOptionKey;
+                        key = "";
+                    }
+                    header_[key] = value;
+                    if (key == HTTP_HEADER_ContentLength) {
+                        content_len = std::stoi(value);
                     }
                 }
             } break;
@@ -380,19 +407,29 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 if (*iter == '\r' || *iter == '\n') {
                     ++iter;
                     continue;
-                } else {
-                    ssize_t ret = data.get_data(content_, iter, content_len);
-                    if (ret != content_len) {
-                        return HttpParse_ContentNotEnough;
-                    } else {
-                        state = HttpParseState_End;
-                    }
                 }
+                
+
+                ssize_t ret = data.get_data(content_, iter, content_len);
+                if (ret != content_len) {
+                    return HttpParse_ContentNotEnough;
+                } else {
+                    state = HttpParseState_End;
+                }
+            } break;
+            case HttpParseState_End:
+            {
+                auto start_iter = data.begin();
+                ssize_t update_size = iter - start_iter;
+                data.update_read_pos(update_size);
+
+                return HttpParse_OK;
             } break;
             default:
                 break;
         }
     }
+    return HttpParse_NotSupportHttp;
 }
 
 int 
