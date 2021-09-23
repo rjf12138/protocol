@@ -51,7 +51,7 @@ TEST_F(Http_Test, Basic_Test)
     std::vector<std::string> head_method = {HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_PUT, HTTP_METHOD_DELETE, HTTP_METHOD_HEAD, HTTP_METHOD_OPTION};
     std::vector<std::string> head_option = {HTTP_HEADER_ContentEncoding, HTTP_HEADER_ContentLanguage, HTTP_HEADER_Allow, HTTP_HEADER_Host, HTTP_HEADER_IfNoneMatch};
     std::vector<std::string> head_value = {"rjfzip", "zh_CN", "allow", "RjfWebServer;kkk", "!@#$%^&*()_+"};
-    std::vector<std::string> head_url = {"/file/index.html"};
+    std::vector<std::string> head_url = {"/file/index.html", "/", "/lkdsf?fjksld&&sdjkfjls"};
 
     HttpPtl ptl1, ptl2;
     basic::ByteBuffer content("Hello, Http!"), ptl_stream;
@@ -69,38 +69,17 @@ TEST_F(Http_Test, Basic_Test)
 
         ptl_stream.clear();
         ptl1.generate(ptl_stream);
-        ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
+        ASSERT_EQ(ptl2.parse(ptl_stream), HttpParse_OK);
 
-        basic::ByteBuffer data;
-        ptl2.get_content(data);
-        ASSERT_EQ(data, content);
+        ASSERT_EQ(ptl2.get_url(), head_url[0]);
+        ASSERT_EQ(ptl2.get_content(), content);
         ASSERT_EQ(ptl2.get_method(), head_method[j]);
         for (std::size_t i = 0; i < head_option.size(); ++i) {
             ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
         }
 
-        // 每次解析后，解析的数据会被清空，需要重新设置
-        ptl1.set_request(head_method[j], head_url[0]);
-        for (std::size_t i = 0; i < head_option.size(); ++i) {
-            ptl1.set_header_option(head_option[i], head_value[i]);
-        }
-
-        ptl1.set_header_option(HTTP_HEADER_ContentLength, std::to_string(content.data_size()));
-        ptl1.set_content(content);
-
-        ptl_stream.clear();
-        ptl1.generate(ptl_stream);
-
-        auto begin_iter = ptl_stream.begin();
-        ptl_stream.insert_front(begin_iter, basic::ByteBuffer("fjlkakjflsdfjlairuwoerjwnv"));
-        ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
-        
-        ptl2.get_content(data);
-        ASSERT_EQ(data, content);
-        ASSERT_EQ(ptl2.get_method(), head_method[j]);
-        for (std::size_t i = 0; i < head_option.size(); ++i) {
-            ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
-        }
+        ptl1.clear();
+        ptl2.clear();
     }
 
     // 测试http响应
@@ -114,39 +93,34 @@ TEST_F(Http_Test, Basic_Test)
         ptl1.set_content(content);
         ptl1.generate(ptl_stream);
 
-        ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
+        ASSERT_EQ(ptl2.parse(ptl_stream), HttpParse_OK);
 
-        basic::ByteBuffer data;
-        ptl2.get_content(data);
-        ASSERT_EQ(data, content);
+        ASSERT_EQ(ptl2.get_content(), content);
         ASSERT_EQ(ptl2.get_status_code(), head_code[j]);
         for (std::size_t i = 0; i < head_option.size(); ++i) {
             ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
         }
-
-        // 每次解析后，解析的数据会被清空，需要重新设置
-        ptl1.set_response(head_code[j], head_phrase[0]);
-        for (std::size_t i = 0; i < head_option.size(); ++i) {
-            ptl1.set_header_option(head_option[i], head_value[i]);
-        }
-
-        ptl1.set_header_option(HTTP_HEADER_ContentLength, std::to_string(content.data_size()));
-        ptl1.set_content(content);
-        ptl1.generate(ptl_stream);
-
-        auto begin_iter = ptl_stream.begin();
-        ptl_stream.insert_front(begin_iter, basic::ByteBuffer("fjlkakjflsdfjlairuwoerjwnv"));
-        ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
-        
-        ptl2.get_content(data);
-        ASSERT_EQ(data, content);
-        ASSERT_EQ(ptl2.get_status_code(), head_code[j]);
-        for (std::size_t i = 0; i < head_option.size(); ++i) {
-            ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
-        }
+        ptl1.clear();
+        ptl2.clear();
     }
+    std::cout << "test" <<std::endl;
+    // 测试特殊HTTP请求
+    ptl1.clear();
+    basic::ByteBuffer buff(std::string("GET / HTTP/1.1/r/nContent-Length:0\r\n\r\n"));
+    ptl1.parse(buff);
+    ASSERT_EQ(ptl1.get_method(), "GET");
+    ASSERT_EQ(ptl1.get_url(), "/");
+    ASSERT_EQ(ptl2.get_content().data_size(), 0);
+
+    // 测试特殊HTTP回复
+    ptl1.clear();
+    buff.write_string(std::string("HTTP/1.1 404 OK/r/nContent-Length:0\r\n\r\n"));
+    ptl1.parse(buff);
+    ASSERT_EQ(ptl1.get_status_code(), 404);
+    ASSERT_EQ(ptl2.get_content().data_size(), 0);
 }
 
+// 测试缓存中存在多条HTTP消息，然后逐条消息进行解析
 TEST_F(Http_Test, Loop_Test)
 {
     std::vector<int>    head_code = {HTTP_STATUS_OK, HTTP_STATUS_NoContent, HTTP_STATUS_Found, HTTP_STATUS_NotFound};
@@ -158,39 +132,38 @@ TEST_F(Http_Test, Loop_Test)
 
     HttpPtl ptl1, ptl2;
     basic::ByteBuffer content("Hello, world!"), ptl_stream;
-    int count_1 = 10, count_2 = 90;
+    int count_1 = 50, count_2 = 3000;
     for (int k = 0; k < count_1; ++k) {
-        time_t start = time(NULL);
-        for (int s = 0; s < count_2; ++s) {
+        for (int s = 0; s < count_2; ++s) {  // 设置多个http请求消息
             for (std::size_t j = 0; j < head_method.size(); ++j) {
                 ptl1.set_request(head_method[j], head_url[0]);
                 for (std::size_t i = 0; i < head_option.size(); ++i) {
                     ptl1.set_header_option(head_option[i], head_value[i]);
                 }
-
-                ptl1.set_header_option(HTTP_HEADER_ContentLength, std::to_string(content.data_size()));
                 ptl1.set_content(content);
 
                 basic::ByteBuffer tmp_buf;
                 ptl1.generate(tmp_buf);
                 ptl_stream += tmp_buf;
+                ptl1.clear();
             }
         }
 
-        for (int s = 0; s < count_2; ++s) {
+        for (int s = 0; s < count_2; ++s) { // 解析多个http请求消息
             for (std::size_t j = 0; j < head_method.size(); ++j) {
-                ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
+                ASSERT_EQ(ptl2.parse(ptl_stream), HttpParse_OK);
 
-                basic::ByteBuffer data;
-                ptl2.get_content(data);
-                ASSERT_EQ(data, content);
+                ASSERT_EQ(ptl2.get_url(), head_url[0]);
+                ASSERT_EQ(ptl2.get_content(), content);
                 ASSERT_EQ(ptl2.get_method(), head_method[j]);
                 for (std::size_t i = 0; i < head_option.size(); ++i) {
                     ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
                 }
+                ptl2.clear();
             }
         }
-        for (int s = 0; s < count_2; ++s) {
+
+        for (int s = 0; s < count_2; ++s) { // 设置多个http回复消息
             for (std::size_t j = 0; j < head_code.size(); ++j) {
                 ptl1.set_response(head_code[j], head_phrase[0]);
                 for (std::size_t i = 0; i < head_option.size(); ++i) {
@@ -203,24 +176,26 @@ TEST_F(Http_Test, Loop_Test)
                 basic::ByteBuffer tmp_buf;
                 ptl1.generate(tmp_buf);
                 ptl_stream += tmp_buf;
+                ptl1.clear();
             }
         }
 
-        for (int s = 0; s < count_2; ++s) {
+        for (int s = 0; s < count_2; ++s) { // 解析多个http回复消息
             for (std::size_t j = 0; j < head_code.size(); ++j) {
-                ASSERT_EQ(ptl2.parser(ptl_stream), HttpParse_OK);
+                ASSERT_EQ(ptl2.parse(ptl_stream), HttpParse_OK);
 
-                basic::ByteBuffer data;
-                ptl2.get_content(data);
-                ASSERT_EQ(data, content);
+                ASSERT_EQ(ptl2.get_content(), content);
                 ASSERT_EQ(ptl2.get_status_code(), head_code[j]);
                 for (std::size_t i = 0; i < head_option.size(); ++i) {
                     ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
                 }
+                ptl2.clear();
             }
         }
     }
 }
+
+// TODO： 错误测试， 数据不够时测试
 
 }
 }

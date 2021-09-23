@@ -41,6 +41,8 @@ public:
 
     // 获取回应状态码
     int get_status_code(void);
+    // 获取请求URL
+    std::string get_url(void);
     // 获取http方法
     std::string get_method(void);
     // 获取消息短语
@@ -48,10 +50,10 @@ public:
     // 获取消息短语
     std::string get_header_option(const std::string &key);
     // 获取报文内容
-    ssize_t get_content(basic::ByteBuffer &data);
+    basic::ByteBuffer& get_content(void);
 
 private:
-    bool is_request;
+    bool is_request_;
     int code_;
     std::string url_;
     std::string method_;

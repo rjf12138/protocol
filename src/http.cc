@@ -16,7 +16,7 @@ HttpPtl::~HttpPtl(void)
 HttpParse_ErrorCode 
 HttpPtl::parser(basic::ByteBuffer &data)
 {
-    is_request = true;
+    is_request_ = true;
     auto start_pos_iter = data.begin();
     auto iter = data.begin();
     for (; iter != data.end(); ++iter) {
@@ -64,7 +64,7 @@ HttpPtl::parser(basic::ByteBuffer &data)
                 patten.write_string(HTTP_METHOD_RESPONE);
                 if (data.bytecmp(iter, patten)) {
                     method_ = HTTP_METHOD_RESPONE;
-                    is_request = false;
+                    is_request_ = false;
                     goto __HTTP_HEAD__;
                 }
             } break;
@@ -232,6 +232,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
         return HttpParse_ContentNotEnough;
     }
 
+    is_request_ = true;
     ssize_t content_len = -1;
     std::string key, value;
     auto iter = data.begin();
@@ -294,7 +295,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                             iter += patten.data_size();
                             state = HttpParseState_UrlOrRetCode;
 
-                            is_request = false;
+                            is_request_ = false;
                         }
                     } break;
                     case 'O':
@@ -328,9 +329,10 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 }
 
                 if (*iter == ' ') {
-                    if (is_request == false) {
+                    if (is_request_ == false) {
                         code_ = std::stoi(url_);
                     }
+                    
                     state = HttpParseState_VersionOrPhrase;
                     while (true) {
                         if (*iter == ' ') {
@@ -362,20 +364,20 @@ HttpPtl::parse(basic::ByteBuffer &data)
                     ++iter;
                     continue;
                 } 
-
+                
                 key += *iter++;
                 if (iter == data.end()) {
                     return HttpParse_ContentNotEnough;
                 }
 
-                if (*iter++ == ':') {
+                if (*iter == ':') {
                     state = HttpParseState_HeadOptionValue;
                     value = "";
                 }
             } break;
             case HttpParseState_HeadOptionValue:
             {
-                if (*iter == ' ') {
+                if (*iter == ' ' || *iter == ':') {
                     ++iter;
                     continue;
                 } 
@@ -388,14 +390,15 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 if (*iter == '\r') {
                     if (*(iter + 2) == '\r') {
                         state = HttpParseState_ContentBody;
+                        iter += 4; // 指向消息体开始位置
                     } else {
                         state = HttpParseState_HeadOptionKey;
-                        key = "";
                     }
                     header_[key] = value;
                     if (key == HTTP_HEADER_ContentLength) {
                         content_len = std::stoi(value);
                     }
+                    key = "";
                 }
             } break;
             case HttpParseState_ContentBody:
@@ -403,17 +406,12 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 if (content_len == -1) {
                     return HttpParse_CantFindBody;
                 }
-
-                if (*iter == '\r' || *iter == '\n') {
-                    ++iter;
-                    continue;
-                }
                 
-
                 ssize_t ret = data.get_data(content_, iter, content_len);
                 if (ret != content_len) {
                     return HttpParse_ContentNotEnough;
                 } else {
+                    iter += ret;
                     state = HttpParseState_End;
                 }
             } break;
@@ -422,7 +420,6 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 auto start_iter = data.begin();
                 ssize_t update_size = iter - start_iter;
                 data.update_read_pos(update_size);
-
                 return HttpParse_OK;
             } break;
             default:
@@ -436,7 +433,7 @@ int
 HttpPtl::generate(basic::ByteBuffer &data)
 {
     data.clear();
-    if (is_request) { // 设置请求行
+    if (is_request_) { // 设置请求行
         data.write_string(method_);
         data.write_int8(' ');
         data.write_string(url_);
@@ -473,6 +470,7 @@ HttpPtl::clear()
     method_ = "";
     phrase_ = "";
     header_.clear();
+    code_ = 0;
 
     return 0;
 }
@@ -481,7 +479,7 @@ int
 HttpPtl::set_content(const basic::ByteBuffer &data)
 {
     content_ = data;
-
+    this->set_header_option(HTTP_HEADER_ContentLength, std::to_string(content_.data_size()));
     return 0;
 }
 
@@ -490,7 +488,7 @@ HttpPtl::set_request(const std::string &method, const std::string &url)
 {
     method_ = method;
     url_ = url;
-    is_request = true;
+    is_request_ = true;
 
     return 0;
 }
@@ -500,7 +498,7 @@ HttpPtl::set_response(int code, const std::string &phrase)
 {
     code_ = code;
     phrase_ = phrase;
-    is_request = false;
+    is_request_ = false;
 
     return 0;
 }
@@ -527,6 +525,12 @@ HttpPtl::get_status_code(void)
 }
 
 std::string 
+HttpPtl::get_url(void)
+{
+    return url_;
+}
+
+std::string 
 HttpPtl::get_method(void)
 {
     return method_;
@@ -538,11 +542,10 @@ HttpPtl::get_header_option(const std::string &key)
     return header_[key];
 }
 
-ssize_t 
-HttpPtl::get_content(basic::ByteBuffer &data)
+basic::ByteBuffer&
+HttpPtl::get_content(void)
 {
-    data = content_;
-    return data.data_size();
+    return content_;
 }
 
 }
