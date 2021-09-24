@@ -40,14 +40,14 @@ std::string http_respone =
 Date: Thu, 07 Jun 2012 07:21:36 GMT\r\n\
 Server: Apache\r\n\
 Connection: close\r\n\
-Content-Length: 11\r\n\
+Content-Length: 12\r\n\
 Etag: \"45bae1-16a-46d776ac\"\r\n\r\n\
 Hello, Http!";
 
 TEST_F(Http_Test, Basic_Test)
 {
     std::vector<int>    head_code = {HTTP_STATUS_OK, HTTP_STATUS_NoContent, HTTP_STATUS_Found, HTTP_STATUS_NotFound};
-    std::vector<std::string> head_phrase = {"OK", "NoContent", "Found", "NotFound"};
+    std::vector<std::string> head_phrase = {"OK", "No Content", "Found", "Not Found"};
     std::vector<std::string> head_method = {HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_PUT, HTTP_METHOD_DELETE, HTTP_METHOD_HEAD, HTTP_METHOD_OPTION};
     std::vector<std::string> head_option = {HTTP_HEADER_ContentEncoding, HTTP_HEADER_ContentLanguage, HTTP_HEADER_Allow, HTTP_HEADER_Host, HTTP_HEADER_IfNoneMatch};
     std::vector<std::string> head_value = {"rjfzip", "zh_CN", "allow", "RjfWebServer;kkk", "!@#$%^&*()_+"};
@@ -71,6 +71,7 @@ TEST_F(Http_Test, Basic_Test)
         ptl1.generate(ptl_stream);
         ASSERT_EQ(ptl2.parse(ptl_stream), HttpParse_OK);
 
+        ASSERT_EQ(ptl2.get_phrase(), HTTP_VERSION);
         ASSERT_EQ(ptl2.get_url(), head_url[0]);
         ASSERT_EQ(ptl2.get_content(), content);
         ASSERT_EQ(ptl2.get_method(), head_method[j]);
@@ -84,7 +85,7 @@ TEST_F(Http_Test, Basic_Test)
 
     // 测试http响应
     for (std::size_t j = 0; j < head_code.size(); ++j) {
-        ptl1.set_response(head_code[j], head_phrase[0]);
+        ptl1.set_response(head_code[j], head_phrase[j % 2]);
         for (std::size_t i = 0; i < head_option.size(); ++i) {
             ptl1.set_header_option(head_option[i], head_value[i]);
         }
@@ -97,16 +98,17 @@ TEST_F(Http_Test, Basic_Test)
 
         ASSERT_EQ(ptl2.get_content(), content);
         ASSERT_EQ(ptl2.get_status_code(), head_code[j]);
+        ASSERT_EQ(ptl2.get_phrase(), head_phrase[j % 2]);
         for (std::size_t i = 0; i < head_option.size(); ++i) {
             ASSERT_EQ(ptl2.get_header_option(head_option[i]), head_value[i]);
         }
         ptl1.clear();
         ptl2.clear();
     }
-    std::cout << "test" <<std::endl;
+
     // 测试特殊HTTP请求
     ptl1.clear();
-    basic::ByteBuffer buff(std::string("GET / HTTP/1.1/r/nContent-Length:0\r\n\r\n"));
+    basic::ByteBuffer buff(std::string("GET / HTTP/1.1\r\nContent-Length:0\r\n\r\n"));
     ptl1.parse(buff);
     ASSERT_EQ(ptl1.get_method(), "GET");
     ASSERT_EQ(ptl1.get_url(), "/");
@@ -114,10 +116,10 @@ TEST_F(Http_Test, Basic_Test)
 
     // 测试特殊HTTP回复
     ptl1.clear();
-    buff.write_string(std::string("HTTP/1.1 404 OK/r/nContent-Length:0\r\n\r\n"));
+    buff.write_string(std::string("HTTP/1.1 404 OK\r\nContent-Length:0\r\n\r\n"));
     ptl1.parse(buff);
     ASSERT_EQ(ptl1.get_status_code(), 404);
-    ASSERT_EQ(ptl2.get_content().data_size(), 0);
+    ASSERT_EQ(ptl1.get_content().data_size(), 0);
 }
 
 // 测试缓存中存在多条HTTP消息，然后逐条消息进行解析
@@ -132,8 +134,9 @@ TEST_F(Http_Test, Loop_Test)
 
     HttpPtl ptl1, ptl2;
     basic::ByteBuffer content("Hello, world!"), ptl_stream;
-    int count_1 = 50, count_2 = 3000;
+    int count_1 = 5, count_2 = 300;
     for (int k = 0; k < count_1; ++k) {
+        std::cout << "k: " << k << std::endl;
         for (int s = 0; s < count_2; ++s) {  // 设置多个http请求消息
             for (std::size_t j = 0; j < head_method.size(); ++j) {
                 ptl1.set_request(head_method[j], head_url[0]);
@@ -195,7 +198,27 @@ TEST_F(Http_Test, Loop_Test)
     }
 }
 
-// TODO： 错误测试， 数据不够时测试
+// 数据不够时测试
+TEST_F(Http_Test, DataNotEnough_Test)
+{
+    HttpPtl ptl;
+    basic::ByteBuffer buffer;
+    for (std::size_t i = 0; i < http_request.length() - 1; ++i) {
+        buffer.write_int8(http_request[i]);
+        //std::cout << buffer.str() << std::endl;
+        ASSERT_EQ(ptl.parse(buffer), HttpParse_ContentNotEnough);
+    }
+    buffer.write_int8(http_request[http_request.length() - 1]);
+    ASSERT_EQ(ptl.parse(buffer), HttpParse_OK);
+
+    for (std::size_t i = 0; i < http_respone.length() - 1; ++i) {
+        buffer.write_int8(http_respone[i]);
+        //std::cout << buffer.str() << std::endl;
+        ASSERT_EQ(ptl.parse(buffer), HttpParse_ContentNotEnough);
+    }
+    buffer.write_int8(http_respone[http_respone.length() - 1]);
+    ASSERT_EQ(ptl.parse(buffer), HttpParse_OK);
+}
 
 }
 }
