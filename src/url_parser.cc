@@ -1,5 +1,4 @@
 #include "protocol.h"
-#include "url_parser.h"
 
 namespace ptl {
 enum ParserState {
