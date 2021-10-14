@@ -1,0 +1,2 @@
+/usr/bin/ar qc libprotocold.a  CMakeFiles/protocol.dir/src/url_parser.cc.o CMakeFiles/protocol.dir/src/websocket.cc.o CMakeFiles/protocol.dir/src/http.cc.o
+/usr/bin/ranlib libprotocold.a

@@ -211,17 +211,17 @@ WebsocketPtl::response_upgrade_packet(HttpPtl &request, HttpPtl &response, basic
         return -1;
     }
 
-    if (request.get_header_option(HTTP_HEADER_Upgrade) == "websocket") {
+    if (request.get_header_option(HTTP_HEADER_Upgrade) != "websocket") {
         return -1;
     }
 
-    if (request.get_header_option(HTTP_HEADER_Connection) == "Upgrade") {
+    if (request.get_header_option(HTTP_HEADER_Connection) != "Upgrade") {
         return -1;
     }
 
-    if (request.get_header_option(HTTP_HEADER_SecWebSocketVersion) == "13") {
-        return -1;
-    }
+    // if (request.get_header_option(HTTP_HEADER_SecWebSocketVersion) != "13") {
+    //     return -1;
+    // }
 
     basic::ByteBuffer buffer;
     buffer.write_string(request.get_header_option(HTTP_HEADER_SecWebSocketKey));
@@ -233,6 +233,28 @@ WebsocketPtl::response_upgrade_packet(HttpPtl &request, HttpPtl &response, basic
     response.set_header_option(HTTP_HEADER_SecWebSocketVersion, "13");
     response.set_header_option(HTTP_HEADER_SecWebSocketAccept, sec_websocket_accept_.str());
     response.set_content(content);
+
+    return 0;
+}
+
+int 
+WebsocketPtl::check_upgrade_response(HttpPtl &response)
+{
+    if (response.get_status_code() != HTTP_STATUS_SwitchingProtocols) {
+        return -1;
+    }
+
+    if (response.get_header_option(HTTP_HEADER_Upgrade) != "websocket") {
+        return -1;
+    }
+
+    if (response.get_header_option(HTTP_HEADER_Connection) != "Upgrade") {
+        return -1;
+    }
+
+    if (response.get_header_option(HTTP_HEADER_SecWebSocketKey) != sec_websocket_accept_.str()) {
+        return -1;
+    }
 
     return 0;
 }
