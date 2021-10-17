@@ -47,15 +47,17 @@ URLParser::parser(const std::string &url)
         {
         case ParserState_Protocol: {
             if (url[i] == 'h' || url[i] == 'H') {
-                if (url.length() > 7 && (url.c_str(), "http://", 7) == 0) {
+                if (url.length() > 7 && strncasecmp(url.c_str(), "http://", 7) == 0) {
                     type_ = ptl::ProtocolType_Http;
+                    state = ParserState_Addr;
                     i += 7;
                 } else {
                     return url.length() <= 7 ? ParserError_IncompleteURL:ParserError_UnknownPtl;
                 }
             } else if (url[i] == 'w' || url[i] == 'W') {
                 if (url.length() > 5 && strncasecmp(url.c_str(), "ws://", 5) == 0) {
-                    type_ = ptl::ProtocolType_Http;
+                    type_ = ptl::ProtocolType_Websocket;
+                    state = ParserState_Addr;
                     i += 5;
                 } else {
                     return url.length() <= 5 ? ParserError_IncompleteURL:ParserError_UnknownPtl;
@@ -63,6 +65,7 @@ URLParser::parser(const std::string &url)
             } else if (url[i] == 'r' || url[i] == 'R') {
                 if (url.length() > 6 && strncasecmp(url.c_str(), "raw://", 6) == 0) {
                     type_ = ptl::ProtocolType_Raw;
+                    state = ParserState_Addr;
                     i += 6;
                 } else {
                     return url.length() <= 6 ? ParserError_IncompleteURL:ParserError_UnknownPtl;
@@ -90,7 +93,13 @@ URLParser::parser(const std::string &url)
                 addr_ += url[i];
             }
             if (i == url.length()) {
-                return ParserError_Ok;
+                if (type_ == ptl::ProtocolType_Websocket || type_ == ptl::ProtocolType_Http) {
+                    port_ = port_ == 0 ? 80 : port_;
+                    res_path_ = "/";
+                    return ParserError_Ok;
+                } else {
+                    return ParserError_AmbiguousPort;
+                }
             }
         } break;
         case ParserState_Port: {
@@ -106,9 +115,19 @@ URLParser::parser(const std::string &url)
                 }
                 port += url[i];
             }
+
             port_ = std::atoi(port.c_str());
             if (i == url.length()) {
-                return ParserError_Ok;
+                if (type_ == ptl::ProtocolType_Websocket || type_ == ptl::ProtocolType_Http) {
+                    port_ = (port_ == 0 ? 80 : port_);
+                    res_path_ = "/";
+                    return ParserError_Ok;
+                } else if (type_ == ptl::ProtocolType_Raw) {
+                    if (port_ > 0) {
+                        return ParserError_Ok;
+                    }
+                }
+                return ParserError_AmbiguousPort;
             }
         } break;
         case ParserState_ResPath: {
@@ -138,18 +157,21 @@ URLParser::parser(const std::string &url)
                     } break;
                     case ParserParam_Value: {
                         if (url[i] == '&') {
-                            param_state = ParserParam_End;
+                            param_state = ParserParam_Key;
                             param_[key] = value;
                             value = key = "";
                             break;
                         }
-                        key += url[i];
+                        value += url[i];
                     } break;
                 }
             }
 
             if (param_state == ParserParam_Value) { // 最后一个参数
                 param_[key] = value;
+                state = ParserState_Complete;
+            } else {
+                return ParserError_IncompleteParameters;
             }
         } break;
         default:

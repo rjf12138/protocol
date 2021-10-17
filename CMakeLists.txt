@@ -17,8 +17,8 @@ target_compile_options(protocol_compiler_flags INTERFACE
 		$<${msvc_cxx}:$<BUILD_INTERFACE:-W3>>)
 
 # 设置生成文件输出路径
-set(LIBRARY_OUTPUT_PATH, ./output/debug/lib)
-add_library(protocol STATIC "")
+set(EXECUTABLE_OUTPUT_PATH, ./output/debug/bin)
+add_executable(protocol ./main/url_test.cc)
 
 target_include_directories(protocol PUBLIC ./inc/)
 target_include_directories(protocol PRIVATE ./extern_inc/)

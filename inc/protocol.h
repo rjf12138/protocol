@@ -27,6 +27,7 @@ enum ParserError {
     ParserError_IncompleteURL = -2,     // url 不完整
     ParserError_AmbiguousPort = -3,     // 端口不明确
     ParserError_ErrorPort = -4,         // 端口错误
+    ParserError_IncompleteParameters = -5 // 参数不全
 };
 
 class URLParser {

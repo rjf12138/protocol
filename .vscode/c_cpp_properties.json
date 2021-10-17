@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/inc"
+                "${workspaceFolder}/inc",
+                "${workspaceFolder}/extern_inc"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang-10",
