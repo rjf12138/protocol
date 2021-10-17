@@ -141,6 +141,14 @@ public:
     basic::ByteBuffer& get_content(void);
     // 获取opcode
     ENUM_WEBSOCKET_OPCODE get_opcode(void);
+    // 清空
+    void clear(void);
+
+    // 打印成16进制
+    int32_t print_hex(int8_t val);
+private:
+    int generate_sec_websocket_key(basic::ByteBuffer &out);
+    int generate_sec_websocket_accept(basic::ByteBuffer &sec_key);
 
     // 64位整型大小端转换
     uint64_t ntohll(uint64_t val);
@@ -148,15 +156,6 @@ public:
 
     // 检查大小端
     int32_t check_end(void);
-    // 打印成16进制
-    int32_t print_hex(int8_t val);
-
-    // 清空
-    void clear(void);
-private:
-    int generate_sec_websocket_key(basic::ByteBuffer &out);
-    int generate_sec_websocket_accept(basic::ByteBuffer &sec_key);
-
 private:
     int8_t fin_;
     basic::ByteBuffer sec_websocket_accept_;
