@@ -30,7 +30,7 @@ URLParser::~URLParser(void)
 void 
 URLParser::clear(void)
 {
-    type_ = ptl::ProtocolType_Raw;
+    type_ = ptl::ProtocolType_Tcp;
     addr_.clear();
     port_ = 0;
     res_path_.clear();
@@ -62,9 +62,9 @@ URLParser::parser(const std::string &url)
                 } else {
                     return url.length() <= 5 ? ParserError_IncompleteURL:ParserError_UnknownPtl;
                 }
-            } else if (url[i] == 'r' || url[i] == 'R') {
-                if (url.length() > 6 && strncasecmp(url.c_str(), "raw://", 6) == 0) {
-                    type_ = ptl::ProtocolType_Raw;
+            } else if (url[i] == 't' || url[i] == 'T') {
+                if (url.length() > 6 && strncasecmp(url.c_str(), "tcp://", 6) == 0) {
+                    type_ = ptl::ProtocolType_Tcp;
                     state = ParserState_Addr;
                     i += 6;
                 } else {
@@ -122,7 +122,7 @@ URLParser::parser(const std::string &url)
                     port_ = (port_ == 0 ? 80 : port_);
                     res_path_ = "/";
                     return ParserError_Ok;
-                } else if (type_ == ptl::ProtocolType_Raw) {
+                } else if (type_ == ptl::ProtocolType_Tcp) {
                     if (port_ > 0) {
                         return ParserError_Ok;
                     }
