@@ -8,14 +8,14 @@
 namespace ptl {
     
 enum ProtocolType {
-    ProtocolType_Tcp = 0,           // 原始数据，不做任何解析
+    ProtocolType_Tcp = 0,           // tcp数据，不做任何解析
     ProtocolType_Http = 1,          // HTTP 协议
     ProtocolType_Websocket = 2      // websocket 协议
 };
 
 /////////////////////// URL Parser //////////////////////////////////
 // 协议名称：
-// raw: raw         // 原始收到的数据不做任何解析
+// tcp: tcp         // tcp数据不做任何解析
 // http: http       // http 协议。 默认端口： 80
 // websocket: ws    // websocket 协议。 默认端口： 80
 
