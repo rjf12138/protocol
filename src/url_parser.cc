@@ -1,15 +1,6 @@
 #include "protocol.h"
 
 namespace ptl {
-enum ParserState {
-    ParserState_Protocol,
-    ParserState_Addr,
-    ParserState_Port,
-    ParserState_ResPath,
-    ParserState_Param,
-    ParserState_Complete
-};
-
 enum ParserParam {
     ParserParam_Key,
     ParserParam_Value,
@@ -33,15 +24,20 @@ URLParser::clear(void)
     type_ = ptl::ProtocolType_Tcp;
     addr_.clear();
     port_ = 0;
-    res_path_.clear();
+    res_path_ = "/";
+    url_ = "/";
     param_.clear();
 }
 
 ParserError 
-URLParser::parser(const std::string &url)
+URLParser::parser(const std::string &url, ParserState start_state)
 {
     this->clear();
-    ParserState state = ParserState_Protocol;
+    if (start_state != ParserState_Protocol && start_state != ParserState_ResPath) {
+        return ParserError_UnknownPtl;
+    }
+
+    ParserState state = start_state;
     for (std::size_t i = 0; i < url.length();) {
         switch (state)
         {
@@ -95,7 +91,6 @@ URLParser::parser(const std::string &url)
             if (i == url.length()) {
                 if (type_ == ptl::ProtocolType_Websocket || type_ == ptl::ProtocolType_Http) {
                     port_ = port_ == 0 ? 80 : port_;
-                    res_path_ = "/";
                     return ParserError_Ok;
                 } else {
                     return ParserError_AmbiguousPort;
@@ -120,7 +115,6 @@ URLParser::parser(const std::string &url)
             if (i == url.length()) {
                 if (type_ == ptl::ProtocolType_Websocket || type_ == ptl::ProtocolType_Http) {
                     port_ = (port_ == 0 ? 80 : port_);
-                    res_path_ = "/";
                     return ParserError_Ok;
                 } else if (type_ == ptl::ProtocolType_Tcp) {
                     if (port_ > 0) {
@@ -131,7 +125,12 @@ URLParser::parser(const std::string &url)
             }
         } break;
         case ParserState_ResPath: {
+            if (url[i] != '/') {
+                return ParserError_ErrorStartWithResPath;
+            }
+            ++i;
             for (;i < url.length(); ++i) {
+                url_ += url[i];
                 if (url[i] == '?') {
                     state = ParserState_Param;
                     ++i;
@@ -147,6 +146,7 @@ URLParser::parser(const std::string &url)
             std::string key, value;
             ParserParam param_state = ParserParam_Key;
             for (;i < url.length(); ++i) {
+                url_ += url[i];
                 switch (param_state) {
                     case ParserParam_Key: {
                         if (url[i] == '=') {

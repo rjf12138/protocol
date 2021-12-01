@@ -24,9 +24,9 @@ TEST_F(URL_Test, BasicUrlTest)
 {
     URLParser paser;
     // 目前只支持全英文
-    // 测试 raw 地址不携带任何参数
-    ASSERT_EQ(paser.parser("raw://127.0.0.1:12138"), ParserError_Ok);
-    ASSERT_EQ(paser.type_, ProtocolType_Raw);
+    // 测试 tcp 地址不携带任何参数
+    ASSERT_EQ(paser.parser("tcp://127.0.0.1:12138"), ParserError_Ok);
+    ASSERT_EQ(paser.type_, ProtocolType_Tcp);
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 12138);
 
@@ -36,6 +36,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 80);
     ASSERT_EQ(paser.res_path_, "/");
+    ASSERT_EQ(paser.url_, "/");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 http 地址解析，添加反斜杠(/), 不带端口默认是 80
@@ -44,6 +45,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 80);
     ASSERT_EQ(paser.res_path_, "/");
+    ASSERT_EQ(paser.url_, "/");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 http 地址解析，添加端口：8088
@@ -52,6 +54,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/");
+    ASSERT_EQ(paser.url_, "/");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 http 地址解析，添加端口：8088， 添加反斜杠(/)
@@ -60,6 +63,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/");
+    ASSERT_EQ(paser.url_, "/");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 http 地址解析，添加端口：8088， 添加资源地址
@@ -68,6 +72,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/index.html");
+    ASSERT_EQ(paser.url_, "/index.html");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 http 地址解析，添加端口：8088， 添加资源地址
@@ -76,6 +81,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/index.html");
+    ASSERT_EQ(paser.url_, "/index.html?key1=value1");
     ASSERT_EQ(paser.param_.size(), 1);
     ASSERT_EQ(paser.param_["key1"], "value1");
 
@@ -85,10 +91,21 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/index.html");
+    ASSERT_EQ(paser.url_, "/index.html?key1=value1&key2=value2");
     ASSERT_EQ(paser.param_.size(), 2);
     ASSERT_EQ(paser.param_["key1"], "value1");
     ASSERT_EQ(paser.param_["key2"], "value2");
 
+    // 测试域名解析
+    ASSERT_EQ(paser.parser("http://www.baidu.com/index.html?key1=value1&key2=value2"), ParserError_Ok);
+    ASSERT_EQ(paser.type_, ProtocolType_Http);
+    ASSERT_EQ(paser.addr_, "www.baidu.com");
+    ASSERT_EQ(paser.port_, 80);
+    ASSERT_EQ(paser.res_path_, "/index.html");
+    ASSERT_EQ(paser.url_, "/index.html?key1=value1&key2=value2");
+    ASSERT_EQ(paser.param_.size(), 2);
+    ASSERT_EQ(paser.param_["key1"], "value1");
+    ASSERT_EQ(paser.param_["key2"], "value2");
 
     ////////////////////////// 测试 websocket 地址 //////////////////////////////////////////////////
     // 测试 ws 地址解析，不携带任何参数, 不带端口默认是 80
@@ -97,6 +114,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 80);
     ASSERT_EQ(paser.res_path_, "/");
+    ASSERT_EQ(paser.url_, "/");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 ws 地址解析，添加反斜杠(/), 不带端口默认是 80
@@ -105,6 +123,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 80);
     ASSERT_EQ(paser.res_path_, "/");
+    ASSERT_EQ(paser.url_, "/");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 ws 地址解析，添加端口：8088
@@ -113,6 +132,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/");
+    ASSERT_EQ(paser.url_, "/");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 ws 地址解析，添加端口：8088， 添加反斜杠(/)
@@ -121,6 +141,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/");
+    ASSERT_EQ(paser.url_, "/");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 ws 地址解析，添加端口：8088， 添加资源地址
@@ -129,6 +150,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/index.html");
+    ASSERT_EQ(paser.url_, "/index.html");
     ASSERT_EQ(paser.param_.size(), 0);
 
     // 测试 ws 地址解析，添加端口：8088， 添加资源地址
@@ -137,6 +159,7 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/index.html");
+    ASSERT_EQ(paser.url_, "/index.html?key1=value1");
     ASSERT_EQ(paser.param_.size(), 1);
     ASSERT_EQ(paser.param_["key1"], "value1");
 
@@ -146,9 +169,30 @@ TEST_F(URL_Test, BasicUrlTest)
     ASSERT_EQ(paser.addr_, "127.0.0.1");
     ASSERT_EQ(paser.port_, 8088);
     ASSERT_EQ(paser.res_path_, "/index.html");
+    ASSERT_EQ(paser.url_, "/index.html?key1=value1&key2=value2");
     ASSERT_EQ(paser.param_.size(), 2);
     ASSERT_EQ(paser.param_["key1"], "value1");
     ASSERT_EQ(paser.param_["key2"], "value2");
+
+    // 测试资源地址解析，路径+参数
+    ASSERT_EQ(paser.parser("/index.html?key1=value1&key2=value2", ParserState_ResPath), ParserError_Ok);
+    ASSERT_EQ(paser.res_path_, "/index.html");
+    ASSERT_EQ(paser.url_, "/index.html?key1=value1&key2=value2");
+    ASSERT_EQ(paser.param_.size(), 2);
+    ASSERT_EQ(paser.param_["key1"], "value1");
+    ASSERT_EQ(paser.param_["key2"], "value2");
+
+    // 路径
+    ASSERT_EQ(paser.parser("/index.html", ParserState_ResPath), ParserError_Ok);
+    ASSERT_EQ(paser.res_path_, "/index.html");
+    ASSERT_EQ(paser.url_, "/index.html");
+    ASSERT_EQ(paser.param_.size(), 0);
+
+    // 根路径
+    ASSERT_EQ(paser.parser("/", ParserState_ResPath), ParserError_Ok);
+    ASSERT_EQ(paser.res_path_, "/");
+    ASSERT_EQ(paser.url_, "/");
+    ASSERT_EQ(paser.param_.size(), 0);
 }
 
 }

@@ -27,7 +27,17 @@ enum ParserError {
     ParserError_IncompleteURL = -2,     // url 不完整
     ParserError_AmbiguousPort = -3,     // 端口不明确
     ParserError_ErrorPort = -4,         // 端口错误
-    ParserError_IncompleteParameters = -5 // 参数不全
+    ParserError_IncompleteParameters = -5, // 参数不全
+    ParserError_ErrorStartWithResPath = -6 // 资源起始位置解析错误
+};
+
+enum ParserState {
+    ParserState_Protocol,
+    ParserState_Addr,
+    ParserState_Port,
+    ParserState_ResPath,
+    ParserState_Param,
+    ParserState_Complete
 };
 
 class URLParser {
@@ -38,13 +48,14 @@ public:
     // 清除之前保存内容
     void clear(void);
     // 解析url
-    ParserError parser(const std::string &url);
+    ParserError parser(const std::string &url, ParserState start_state = ParserState_Protocol);
     
 public:
     ptl::ProtocolType type_;    // 协议类型
     std::string addr_;  // 服务器地址
     int port_;      // 服务器端口
     std::string res_path_; // 资源路径
+    std::string url_; // 资源路径加参数
     std::map<std::string, std::string> param_; // 参数
 };
 
