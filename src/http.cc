@@ -44,7 +44,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
     this->clear();
 
     is_request_ = true;
-    ssize_t content_len = -1;
+    ssize_t content_len = 0;
     std::string key, value;
     auto iter = data.begin();
     HttpParseState state = HttpParseState_Method;
@@ -203,8 +203,9 @@ HttpPtl::parse(basic::ByteBuffer &data)
             } break;
             case HttpParseState_ContentBody:
             {
-                if (content_len == -1) {
-                    return HttpParse_CantFindBody;
+                if (content_len == 0) {
+                    state = HttpParseState_End;
+                    break;
                 }
                 
                 ssize_t ret = data.get_data(content_, iter, content_len);
