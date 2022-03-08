@@ -22,7 +22,15 @@ enum HttpParseState {
     HttpParseState_HeadOptionKey,
     HttpParseState_HeadOptionValue,
     HttpParseState_ContentBody,
+    HttpParseState_TranferEncoding,
     HttpParseState_End
+};
+
+enum HttpParseTranferEncodeState {
+    HttpParseTranferEncodeState_DataLen,
+    HttpParseTranferEncodeState_ContentBody,
+    HttpParseTranferEncodeState_ChunkEnd,
+    HttpParseTranferEncodeState_End,
 };
 
 HttpPtl::HttpPtl(void)
@@ -189,7 +197,11 @@ HttpPtl::parse(basic::ByteBuffer &data)
 
                 if (*iter == '\r') {
                     if (*(iter + 2) == '\r') {
-                        state = HttpParseState_ContentBody;
+                        if (header_.find(HTTP_HEADER_TranferEncoding) != header_.end()) {
+                            state = HttpParseState_TranferEncoding;
+                        } else {
+                            state = HttpParseState_ContentBody;
+                        }
                         iter += 4; // 指向消息体开始位置
                     } else {
                         state = HttpParseState_HeadOptionKey;
@@ -215,6 +227,10 @@ HttpPtl::parse(basic::ByteBuffer &data)
                     iter += ret;
                     state = HttpParseState_End;
                 }
+            } break;
+            case HttpParseState_TranferEncoding:
+            {
+
             } break;
             case HttpParseState_End:
             {
@@ -353,6 +369,45 @@ basic::ByteBuffer&
 HttpPtl::get_content(void)
 {
     return content_;
+}
+
+HttpParse_ErrorCode
+HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data, basic::ByteBufferIterator iter)
+{
+    uint32_t data_len = 0;
+    auto tmp_iter = iter;
+    HttpParseTranferEncodeState state = HttpParseTranferEncodeState_DataLen;
+    while (tmp_iter != data.end()) {
+        switch (state) {
+            case HttpParseTranferEncodeState_DataLen:
+            {
+                if (*tmp_iter >= '0' && *tmp_iter <= '9') {
+                    data_len = data_len * 16 + (*tmp_iter - '0');
+                } else if (*tmp_iter >= 'A' && *tmp_iter <= 'F') {
+                     data_len = data_len * 16 + (*tmp_iter - 'A' + 10);
+                } else if (*tmp_iter >= 'a' && *tmp_iter <= 'f') {
+                     data_len = data_len * 16 + (*tmp_iter - 'a' + 10);
+                } else {
+                    ITER_INCRE_AND_CHECK(tmp_iter, data);
+                ITER_CHECK(tmp_iter, data, 2);
+                if (*tmp_iter == '\r' && *(tmp_iter + 1) == '\n') {
+                    state = HttpParseTranferEncodeState_ContentBody;
+                    tmp_iter += 2;
+                    continue;
+                }
+                }
+
+                if (*tmp_iter == '\n' && (*(tmp_iter - 1) != '\\' || 
+                    *(tmp_iter - 2) != '\r' || *(tmp_iter - 3) != '\\')) {
+                        return HttpParse_ParseDataLenUnknownChar;
+                } else if (*tmp_iter == '\n' && *(tmp_iter - 1) == '\\' &&
+                    *(tmp_iter - 2) == '\r' && *(tmp_iter - 3) == '\\') {
+
+                }
+                return HttpParse_ParseDataLenFailed;
+            } break;
+        }
+    }
 }
 
 }
