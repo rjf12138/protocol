@@ -106,11 +106,16 @@ public:
     std::string get_header_option(const std::string &key);
     // 获取报文内容
     basic::ByteBuffer& get_content(void);
+    std::vector<basic::ByteBuffer> &get_tranfer_encode_datas(void);
 
 private:
-    HttpParse_ErrorCode parse_tranfer_encoding(basic::ByteBuffer &data, basic::ByteBufferIterator iter);
+    HttpParse_ErrorCode parse_tranfer_encoding(basic::ByteBuffer &data);
 
 private:
+    bool is_parse_tranfer_encode_;
+    basic::ByteBufferIterator tranfer_encode_iter_;
+    std::vector<basic::ByteBuffer> tranfer_encode_datas_;
+
     bool is_request_;
     int code_;
     std::string url_;

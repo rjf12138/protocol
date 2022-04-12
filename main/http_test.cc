@@ -44,6 +44,14 @@ Content-Length: 12\r\n\
 Etag: \"45bae1-16a-46d776ac\"\r\n\r\n\
 Hello, Http!";
 
+std::string tranfer_encode = 
+"HTTP/1.1 200 OK\r\n\
+Date: Thu, 07 Jun 2012 07:21:36 GMT\r\n\
+Server: Apache\r\n\
+Connection: close\r\n\
+Tranfer-Encoding: chunked\r\n\
+Etag: \"45bae1-16a-46d776ac\"\r\n\r\n";
+
 TEST_F(Http_Test, Basic_Test)
 {
     std::vector<int>    head_code = {HTTP_STATUS_OK, HTTP_STATUS_NoContent, HTTP_STATUS_Found, HTTP_STATUS_NotFound};
@@ -218,6 +226,13 @@ TEST_F(Http_Test, DataNotEnough_Test)
     }
     buffer.write_int8(http_respone[http_respone.length() - 1]);
     ASSERT_EQ(ptl.parse(buffer), HttpParse_OK);
+}
+
+// 测试 Tranfer-encode 
+TEST_F(Http_Test, TranferEncodeBasic_Test)
+{
+    basic::ByteBuffer buffer(tranfer_encode);
+    
 }
 
 }
