@@ -144,7 +144,6 @@ TEST_F(Http_Test, Loop_Test)
     basic::ByteBuffer content("Hello, world!"), ptl_stream;
     int count_1 = 5, count_2 = 300;
     for (int k = 0; k < count_1; ++k) {
-        std::cout << "k: " << k << std::endl;
         for (int s = 0; s < count_2; ++s) {  // 设置多个http请求消息
             for (std::size_t j = 0; j < head_method.size(); ++j) {
                 ptl1.set_request(head_method[j], head_url[0]);
@@ -228,11 +227,47 @@ TEST_F(Http_Test, DataNotEnough_Test)
     ASSERT_EQ(ptl.parse(buffer), HttpParse_OK);
 }
 
+basic::ByteBuffer get_chunked_data(basic::ByteBuffer data)
+{
+    basic::ByteBuffer data_buffer;
+    if (data.data_size() > 0) {
+        char buffer[32] = {0};
+        snprintf(buffer, 32, "%lx", data.data_size());
+
+        data_buffer.write_bytes(buffer, strlen(buffer));
+        data_buffer.write_bytes("\r\n", 2);
+
+        data_buffer += data;
+        data_buffer.write_bytes("\r\n", 2);
+    }
+    data_buffer.write_bytes("0\r\n\r\n",5);
+    return data_buffer;
+}
+
 // 测试 Tranfer-encode 
 TEST_F(Http_Test, TranferEncodeBasic_Test)
 {
-    basic::ByteBuffer buffer(tranfer_encode);
-    
+    HttpPtl http_ptl;
+    basic::ByteBuffer buffer;
+    std::string data_str;
+
+    // 单个块解析
+    for (int i = 0; i < 100; ++i) {
+        std::cout << "i: " << i << std::endl;
+        buffer += tranfer_encode;
+        buffer += get_chunked_data(data_str);
+
+        http_ptl.parse(buffer);
+        std::vector<basic::ByteBuffer> &datas_refer = http_ptl.get_tranfer_encode_datas();
+        if (i == 0) {
+            ASSERT_EQ(datas_refer.size(), 0);
+        } else {
+            ASSERT_EQ(datas_refer.size(), 1);
+            ASSERT_EQ(datas_refer[0], data_str);
+            std::cout << datas_refer[0].str() <<std::endl;
+        }
+        data_str += 'a';
+    }
 }
 
 }
