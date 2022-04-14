@@ -436,15 +436,17 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
                 }
             } break;
             case HttpParseTranferEncodeState_ChunkEnd: {
-                auto start_iter = data.begin();
-                ssize_t update_size = tranfer_encode_iter_ - start_iter;
-                data.update_read_pos(update_size);
                 if (data_len <= 0) {
+                    auto start_iter = data.begin();
+                    ssize_t update_size = tranfer_encode_iter_ - start_iter;
+                    data.update_read_pos(update_size);
                     is_parse_tranfer_encode_ = false;
                     return HttpParse_OK;
                 } else {
+                    data_len = 0;
                     state = HttpParseTranferEncodeState_DataLen;
                 }
+                continue;
             } break;
         }
         ITER_INCRE_AND_CHECK(tranfer_encode_iter_, data);

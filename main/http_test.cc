@@ -227,16 +227,16 @@ TEST_F(Http_Test, DataNotEnough_Test)
     ASSERT_EQ(ptl.parse(buffer), HttpParse_OK);
 }
 
-basic::ByteBuffer get_chunked_data(basic::ByteBuffer data)
+basic::ByteBuffer get_chunked_data(basic::ByteBuffer data, int num)
 {
     basic::ByteBuffer data_buffer;
     if (data.data_size() > 0) {
-        char buffer[32] = {0};
-        snprintf(buffer, 32, "%lx", data.data_size());
-
-        data_buffer.write_bytes(buffer, strlen(buffer));
-        data_buffer.write_bytes("\r\n", 2);
-
+        for (int i = 0; i < num; ++i) {
+            char buffer[32] = {0};
+            snprintf(buffer, 32, "%lx", data.data_size());
+            data_buffer.write_bytes(buffer, strlen(buffer));
+            data_buffer.write_bytes("\r\n", 2);
+        }
         data_buffer += data;
         data_buffer.write_bytes("\r\n", 2);
     }
@@ -245,7 +245,33 @@ basic::ByteBuffer get_chunked_data(basic::ByteBuffer data)
 }
 
 // 测试 Tranfer-encode 
-TEST_F(Http_Test, TranferEncodeBasic_Test)
+TEST_F(Http_Test, TranferEncodeSingleTest)
+{
+    HttpPtl http_ptl;
+    basic::ByteBuffer buffer;
+    std::string data_str;
+
+    // 单个块解析
+    for (int i = 0; i < 100; ++i) {
+        buffer += tranfer_encode;
+        buffer += get_chunked_data(data_str, 1);
+
+        http_ptl.parse(buffer);
+        std::vector<basic::ByteBuffer> &datas_refer = http_ptl.get_tranfer_encode_datas();
+        if (i == 0) {
+            ASSERT_EQ(datas_refer.size(), 0);
+        } else {
+            ASSERT_EQ(datas_refer.size(), 1);
+            ASSERT_EQ(datas_refer[0], data_str);
+        }
+        datas_refer.clear();
+        buffer.clear();
+        data_str += 'a';
+    }
+}
+
+// 测试 Tranfer-encode 
+TEST_F(Http_Test, TranferEncodeMutilTest)
 {
     HttpPtl http_ptl;
     basic::ByteBuffer buffer;
@@ -255,17 +281,18 @@ TEST_F(Http_Test, TranferEncodeBasic_Test)
     for (int i = 0; i < 100; ++i) {
         std::cout << "i: " << i << std::endl;
         buffer += tranfer_encode;
-        buffer += get_chunked_data(data_str);
-
+        buffer += get_chunked_data(data_str, i);
+        std::cout << buffer.str() <<std::endl;
         http_ptl.parse(buffer);
         std::vector<basic::ByteBuffer> &datas_refer = http_ptl.get_tranfer_encode_datas();
-        if (i == 0) {
-            ASSERT_EQ(datas_refer.size(), 0);
-        } else {
-            ASSERT_EQ(datas_refer.size(), 1);
-            ASSERT_EQ(datas_refer[0], data_str);
-            std::cout << datas_refer[0].str() <<std::endl;
+
+        for (int k = 0; k < i; ++k) {
+            ASSERT_EQ(datas_refer.size(), i);
+            ASSERT_EQ(datas_refer[k], data_str);
         }
+        
+        datas_refer.clear();
+        buffer.clear();
         data_str += 'a';
     }
 }
