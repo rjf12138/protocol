@@ -23,24 +23,6 @@ namespace ptl {
         return HttpParse_ContentNotEnough;\
     }
 
-enum HttpParseState {
-    HttpParseState_Method,
-    HttpParseState_UrlOrRetCode,
-    HttpParseState_VersionOrPhrase,
-    HttpParseState_HeadOptionKey,
-    HttpParseState_HeadOptionValue,
-    HttpParseState_ContentBody,
-    HttpParseState_TranferEncoding,
-    HttpParseState_End
-};
-
-enum HttpParseTranferEncodeState {
-    HttpParseTranferEncodeState_DataLen,
-    HttpParseTranferEncodeState_ContentBody,
-    HttpParseTranferEncodeState_ChunkEnd,
-    HttpParseTranferEncodeState_End,
-};
-
 HttpPtl::HttpPtl(void)
 :is_parse_tranfer_encode_(false)
 {
@@ -156,7 +138,6 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 }
 
                 ITER_INCRE_AND_CHECK(iter, data);
-
                 if (*iter == ' ') {
                     if (is_request_ == false) {
                         code_ = std::stoi(url_);
@@ -206,7 +187,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 
                 value += *iter;
                 ITER_INCRE_AND_CHECK(iter, data);
-                ITER_CHECK_EXCLUDE_ITER(iter, data, 2);
+                ITER_CHECK_EXCLUDE_ITER(iter, data, 4);
 
                 if (*iter == '\r') {
                     if (*(iter + 2) == '\r') {
@@ -245,6 +226,10 @@ HttpPtl::parse(basic::ByteBuffer &data)
             {
                 is_parse_tranfer_encode_ = true;
                 tranfer_encode_iter_ = iter;
+                if (tranfer_encode_iter_ == data.end()) {
+                    std::cout << "Data End..." << std::endl;
+                }
+                parse_tranfer_encode_state_ = HttpParseTranferEncodeState_DataLen;
                 return parse_tranfer_encoding(data);
             } break;
             case HttpParseState_End:
@@ -396,10 +381,13 @@ HttpPtl::get_tranfer_encode_datas(void)
 HttpParse_ErrorCode
 HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
 {
+    if (tranfer_encode_iter_ == data.end()) {
+        return HttpParse_ContentNotEnough;
+    }
+
     uint32_t data_len = 0;
-    HttpParseTranferEncodeState state = HttpParseTranferEncodeState_DataLen;
     while (true) {
-        switch (state) {
+        switch (parse_tranfer_encode_state_) {
             case HttpParseTranferEncodeState_DataLen: {
                 if (*tranfer_encode_iter_ >= '0' && *tranfer_encode_iter_ <= '9') {
                     data_len = data_len * 16 + (*tranfer_encode_iter_ - '0');
@@ -410,7 +398,7 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
                 } else {
                     ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, 2);
                     if (*tranfer_encode_iter_ == '\r' && *(tranfer_encode_iter_ + 1) == '\n') {
-                        state = HttpParseTranferEncodeState_ContentBody;
+                        parse_tranfer_encode_state_ = HttpParseTranferEncodeState_ContentBody;
                         tranfer_encode_iter_ += 2;
                         continue;
                     } else {
@@ -428,7 +416,7 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
                 }
                 ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, 2);
                 if (*tranfer_encode_iter_ == '\r' && *(tranfer_encode_iter_ + 1) == '\n') {
-                    state = HttpParseTranferEncodeState_ChunkEnd;
+                    parse_tranfer_encode_state_ = HttpParseTranferEncodeState_ChunkEnd;
                     tranfer_encode_iter_ += 2;
                     continue;
                 } else {
@@ -444,7 +432,7 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
                     return HttpParse_OK;
                 } else {
                     data_len = 0;
-                    state = HttpParseTranferEncodeState_DataLen;
+                    parse_tranfer_encode_state_ = HttpParseTranferEncodeState_DataLen;
                 }
                 continue;
             } break;

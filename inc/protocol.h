@@ -73,6 +73,24 @@ enum HttpParse_ErrorCode {
     HttpParse_ParseDataLenUnknownChar = -8,   // TranferEncode 长度解析出现未知字符
 };
 
+enum HttpParseState {
+    HttpParseState_Method,
+    HttpParseState_UrlOrRetCode,
+    HttpParseState_VersionOrPhrase,
+    HttpParseState_HeadOptionKey,
+    HttpParseState_HeadOptionValue,
+    HttpParseState_ContentBody,
+    HttpParseState_TranferEncoding,
+    HttpParseState_End
+};
+
+enum HttpParseTranferEncodeState {
+    HttpParseTranferEncodeState_DataLen,
+    HttpParseTranferEncodeState_ContentBody,
+    HttpParseTranferEncodeState_ChunkEnd,
+    HttpParseTranferEncodeState_End,
+};
+
 class HttpPtl {
 public:
     HttpPtl(void);
@@ -113,6 +131,7 @@ private:
 
 private:
     bool is_parse_tranfer_encode_;
+    HttpParseTranferEncodeState parse_tranfer_encode_state_;
     basic::ByteBufferIterator tranfer_encode_iter_;
     std::vector<basic::ByteBuffer> tranfer_encode_datas_;
 
