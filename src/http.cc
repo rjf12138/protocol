@@ -225,11 +225,10 @@ HttpPtl::parse(basic::ByteBuffer &data)
             case HttpParseState_TranferEncoding:
             {
                 is_parse_tranfer_encode_ = true;
-                tranfer_encode_iter_ = iter;
-                if (tranfer_encode_iter_ == data.end()) {
-                    std::cout << "Data End..." << std::endl;
-                }
-                parse_tranfer_encode_state_ = HttpParseTranferEncodeState_DataLen;
+                auto start_iter = data.begin();
+                ssize_t update_size = iter - start_iter;
+                data.update_read_pos(update_size);
+
                 return parse_tranfer_encoding(data);
             } break;
             case HttpParseState_End:
@@ -381,14 +380,13 @@ HttpPtl::get_tranfer_encode_datas(void)
 HttpParse_ErrorCode
 HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
 {
-    if (tranfer_encode_iter_ == data.end()) {
-        return HttpParse_ContentNotEnough;
-    }
-
+    tranfer_encode_iter_ = data.begin();
+    parse_tranfer_encode_state_ = HttpParseTranferEncodeState_DataLen;
     uint32_t data_len = 0;
     while (true) {
         switch (parse_tranfer_encode_state_) {
             case HttpParseTranferEncodeState_DataLen: {
+                ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, 1); // 检查可以读的字节数
                 if (*tranfer_encode_iter_ >= '0' && *tranfer_encode_iter_ <= '9') {
                     data_len = data_len * 16 + (*tranfer_encode_iter_ - '0');
                 } else if (*tranfer_encode_iter_ >= 'A' && *tranfer_encode_iter_ <= 'F') {
@@ -407,15 +405,18 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
                 }
             } break;
             case HttpParseTranferEncodeState_ContentBody: {
-                ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, data_len);
+                ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, data_len + 2); // 加2是\r\n数据结束字符
+                std::cout << "test1" <<std::endl;
                 if (data_len > 0) {
                     content_.clear();
                     data.get_data(content_, tranfer_encode_iter_, data_len);
                     tranfer_encode_datas_.push_back(content_);
                     tranfer_encode_iter_ += data_len;
+                    std::cout << "test1.5" <<std::endl;
                 }
-                ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, 2);
+                std::cout << "test2" <<std::endl;
                 if (*tranfer_encode_iter_ == '\r' && *(tranfer_encode_iter_ + 1) == '\n') {
+                    std::cout << "test3" <<std::endl;
                     parse_tranfer_encode_state_ = HttpParseTranferEncodeState_ChunkEnd;
                     tranfer_encode_iter_ += 2;
                     continue;
@@ -424,17 +425,17 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
                 }
             } break;
             case HttpParseTranferEncodeState_ChunkEnd: {
+                auto start_iter = data.begin();
+                ssize_t update_size = tranfer_encode_iter_ - start_iter;
+                data.update_read_pos(update_size);
                 if (data_len <= 0) {
-                    auto start_iter = data.begin();
-                    ssize_t update_size = tranfer_encode_iter_ - start_iter;
-                    data.update_read_pos(update_size);
                     is_parse_tranfer_encode_ = false;
                     return HttpParse_OK;
                 } else {
                     data_len = 0;
                     parse_tranfer_encode_state_ = HttpParseTranferEncodeState_DataLen;
+                    continue;
                 }
-                continue;
             } break;
         }
         ITER_INCRE_AND_CHECK(tranfer_encode_iter_, data);

@@ -328,7 +328,7 @@ TEST_F(Http_Test, TranferEncodeDataNotEnough_Test)
             
             datas_refer.clear();
             buffer.clear();
-            data_str += j;
+            data_str.write_int8((int8_t)j);
         }
     }
 }
