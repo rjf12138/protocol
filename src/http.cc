@@ -19,7 +19,8 @@ namespace ptl {
 
 // 检查还能读多少数据，包括当前迭代器指的位置
 #define ITER_CHECK_INCLUDE_ITER(iter, buffer, pos) \
-    if ((buffer.end() - iter) < pos) {\
+    int tmp_pos = pos - 1;\
+    if ((iter + tmp_pos) == buffer.end()) {\
         return HttpParse_ContentNotEnough;\
     }
 
@@ -187,7 +188,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
                 
                 value += *iter;
                 ITER_INCRE_AND_CHECK(iter, data);
-                ITER_CHECK_EXCLUDE_ITER(iter, data, 4);
+                ITER_CHECK_INCLUDE_ITER(iter, data, 4);
 
                 if (*iter == '\r') {
                     if (*(iter + 2) == '\r') {
@@ -394,7 +395,7 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
                 } else if (*tranfer_encode_iter_ >= 'a' && *tranfer_encode_iter_ <= 'f') {
                     data_len = data_len * 16 + (*tranfer_encode_iter_ - 'a' + 10);
                 } else {
-                    ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, 2);
+                    ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, data_len + 4);
                     if (*tranfer_encode_iter_ == '\r' && *(tranfer_encode_iter_ + 1) == '\n') {
                         parse_tranfer_encode_state_ = HttpParseTranferEncodeState_ContentBody;
                         tranfer_encode_iter_ += 2;
@@ -405,18 +406,13 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
                 }
             } break;
             case HttpParseTranferEncodeState_ContentBody: {
-                ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, data_len + 2); // 加2是\r\n数据结束字符
-                std::cout << "test1" <<std::endl;
                 if (data_len > 0) {
                     content_.clear();
                     data.get_data(content_, tranfer_encode_iter_, data_len);
                     tranfer_encode_datas_.push_back(content_);
                     tranfer_encode_iter_ += data_len;
-                    std::cout << "test1.5" <<std::endl;
                 }
-                std::cout << "test2" <<std::endl;
                 if (*tranfer_encode_iter_ == '\r' && *(tranfer_encode_iter_ + 1) == '\n') {
-                    std::cout << "test3" <<std::endl;
                     parse_tranfer_encode_state_ = HttpParseTranferEncodeState_ChunkEnd;
                     tranfer_encode_iter_ += 2;
                     continue;

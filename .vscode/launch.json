@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/ruanjian/workspace/project_v/protocol/output/debug/bin/protocol",
-            "args": ["--gtest_filter=Http_Test.TranferEncodeDataNotEnough_Test"],
+            "args": [],
             "stopAtEntry": false,
             "cwd": "/home/ruanjian/workspace/project_v/protocol/output/debug/bin",
             "environment": [],

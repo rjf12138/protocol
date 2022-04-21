@@ -305,15 +305,12 @@ TEST_F(Http_Test, TranferEncodeDataNotEnough_Test)
 
     // 单个块解析
     for (int j = 0; j < 256; ++j) { // 对每个字符进行测试
-        std::cout << "j: " << j << std::endl;
         for (int i = 0; i < 20; ++i) {
-            std::cout << "i: " << i << std::endl;
             buffer += tranfer_encode;
             buffer += get_chunked_data(data_str, i);
 
             basic::ByteBuffer tmp_buffer;
             for (std::size_t s = 0; s < buffer.data_size() - 1; ++s) {
-                std::cout << "data_size: " << buffer.data_size() << " s: " << s << " value: " << buffer[s] << std::endl;
                 tmp_buffer.write_int8(buffer[s]);
                 ASSERT_EQ(http_ptl.parse(tmp_buffer), HttpParse_ContentNotEnough);
             }
