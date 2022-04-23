@@ -192,7 +192,7 @@ HttpPtl::parse(basic::ByteBuffer &data)
 
                 if (*iter == '\r') {
                     if (*(iter + 2) == '\r') {
-                        if (header_.find(HTTP_HEADER_TranferEncoding) != header_.end()) {
+                        if (header_.find(HTTP_HEADER_TransferEncoding) != header_.end() && header_[HTTP_HEADER_TransferEncoding] == "chunked") {
                             state = HttpParseState_TranferEncoding;
                         } else {
                             state = HttpParseState_ContentBody;
@@ -425,7 +425,6 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
                 ssize_t update_size = tranfer_encode_iter_ - start_iter;
                 data.update_read_pos(update_size);
                 if (data_len <= 0) {
-                    is_parse_tranfer_encode_ = false;
                     return HttpParse_OK;
                 } else {
                     data_len = 0;
