@@ -124,7 +124,10 @@ public:
     std::string get_header_option(const std::string &key);
     // 获取报文内容
     basic::ByteBuffer& get_content(void);
+    // 获取tranfer_encode_data数据
     std::vector<basic::ByteBuffer> &get_tranfer_encode_datas(void);
+    // 检查当前解析的是不是tranfer_encode_data
+    bool is_tranfer_encode(void) const {return is_parse_tranfer_encode_;}
 
 private:
     HttpParse_ErrorCode parse_tranfer_encoding(basic::ByteBuffer &data);
