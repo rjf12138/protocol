@@ -43,7 +43,7 @@ WebsocketPtl::ntohll(uint64_t host)
     uint32_t   high, low;
 
     low = host & 0xFFFFFFFF;
-    high = (host >> 32) & 0xFFFFFFFF;
+    high = static_cast<uint32_t>((host >> 32) & 0xFFFFFFFF);
     low = ntohl(low);
     high = ntohl(high);
 
@@ -65,7 +65,7 @@ WebsocketPtl::htonll(uint64_t host)
     uint32_t   high, low;
 
     low = host & 0xFFFFFFFF;
-    high = (host >> 32) & 0xFFFFFFFF;
+    high = static_cast<uint32_t>((host >> 32) & 0xFFFFFFFF);
     low = htonl(low);
     high = htonl(high);
 
@@ -92,7 +92,7 @@ WebsocketPtl::generate_sec_websocket_key(basic::ByteBuffer &out)
 {
     basic::ByteBuffer buffer;
     for (int i = 0; i < 16; ++i) {
-        buffer.write_int8(rand() % 256);
+        buffer.write_int8(static_cast<int8_t>(rand() % 256));
     }
     out.clear();
     algorithm::encode_base64(buffer, out);  // 生成发送的sec-key
@@ -123,7 +123,7 @@ WebsocketPtl::parse(basic::ByteBuffer &buff)
     uint64_t payload_length = 0;
     uint64_t len = buff.data_size();
     if (len >= 1) {
-        fin_ = (unsigned char)buff[msg_pos] >> 7;
+        fin_ = static_cast<unsigned char>(buff[msg_pos]) >> 7;
         if ((buff[msg_pos] & 0x70) != 0x0) { // 该实现不支持扩展，所以RSV1, RSV2, RSV3必须是0，否则关闭返回错误关闭连接
             return WebsocketParse_ParseFailed;
         }
@@ -134,14 +134,14 @@ WebsocketPtl::parse(basic::ByteBuffer &buff)
     }
 
     if (len >= 2) {
-        mask = (uint8_t)buff[msg_pos] >> 7;
+        mask = static_cast<uint8_t>(buff[msg_pos]) >> 7;
         payload_length = buff[msg_pos] & 0x7F;
         msg_pos++;
     } else {
         return WebsocketParse_PacketNotEnough;
     }
        
-    if (payload_length < 126 && payload_length >= 0) {
+    if (payload_length < 126) {
         // 
     } else if (payload_length == 126 && len >= msg_pos + 2) {
         uint16_t length = 0;
@@ -259,7 +259,7 @@ WebsocketPtl::check_upgrade_response(HttpPtl &response)
     return 0;
 }
 
-int32_t 
+ssize_t 
 WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_t nOpcode, bool bMask)
 {
     out.clear();
@@ -267,7 +267,7 @@ WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_
     ssize_t len = content.data_size();
     int32_t start_pos = 0;
     // add fin and opcode
-    char cbyte = 0x8;
+    int8_t cbyte = 0x8;
     cbyte = (cbyte << 4) | (nOpcode & 0xf);
     out.write_int8(cbyte);
     start_pos++;
@@ -275,7 +275,7 @@ WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_
     // add mask msg length
     cbyte = 0;
     if (bMask) {
-        cbyte = 0x8 << 4;
+        cbyte = static_cast<int8_t>(0x8 << 4);
     }
 
     if (len >= 0 && len < 126) {
@@ -286,7 +286,7 @@ WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_
         cbyte |= 126;
         out.write_int8(cbyte);
         start_pos++;
-        out.write_int16(htons(len));
+        out.write_int16(htons(static_cast<uint16_t>(len)));
         start_pos += 2;
     } else if (len >= 0xFFFF) {
         cbyte |= 127;
@@ -301,7 +301,7 @@ WebsocketPtl::generate(basic::ByteBuffer &out, basic::ByteBuffer &content, int8_
         int32_t mask_num = static_cast<int32_t>(time(NULL));
 
         out.write_int32(mask_num);
-        char *mask_ch = (char*)&mask_num; // 直接对mask_num取指针用下标访问有问题
+        char *mask_ch = reinterpret_cast<char*>(&mask_num); // 直接对mask_num取指针用下标访问有问题
 
         for (unsigned i = 0; i < len; ++i) {
             out.write_int8(content[i] ^ mask_ch[i % 4]);

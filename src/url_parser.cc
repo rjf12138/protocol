@@ -147,7 +147,7 @@ URLParser::parser(const std::string &url, ParserState start_state)
             ParserParam param_state = ParserParam_Key;
             for (;i < url.length(); ++i) {
                 url_ += url[i];
-                switch (param_state) {
+                switch (static_cast<int>(param_state)) {
                     case ParserParam_Key: {
                         if (url[i] == '=') {
                             param_state = ParserParam_Value;

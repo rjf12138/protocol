@@ -19,9 +19,11 @@ namespace ptl {
 
 // 检查还能读多少数据，包括当前迭代器指的位置
 #define ITER_CHECK_INCLUDE_ITER(iter, buffer, pos) \
-    int tmp_pos = pos - 1;\
-    if ((iter + tmp_pos) == buffer.end()) {\
-        return HttpParse_ContentNotEnough;\
+    {\
+        auto tmp_pos = pos - 1;\
+        if ((iter + tmp_pos) == buffer.end()) {\
+            return HttpParse_ContentNotEnough;\
+        }\
     }
 
 HttpPtl::HttpPtl(void)
@@ -385,7 +387,7 @@ HttpPtl::parse_tranfer_encoding(basic::ByteBuffer &data)
     parse_tranfer_encode_state_ = HttpParseTranferEncodeState_DataLen;
     uint32_t data_len = 0;
     while (true) {
-        switch (parse_tranfer_encode_state_) {
+        switch (static_cast<int>(parse_tranfer_encode_state_)) {
             case HttpParseTranferEncodeState_DataLen: {
                 ITER_CHECK_INCLUDE_ITER(tranfer_encode_iter_, data, 1); // 检查可以读的字节数
                 if (*tranfer_encode_iter_ >= '0' && *tranfer_encode_iter_ <= '9') {
